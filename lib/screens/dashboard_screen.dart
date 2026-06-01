@@ -11,6 +11,7 @@ import 'schedule_tab.dart';
 import 'mix_match_tab.dart';
 import 'employee_tab.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../widgets/profile_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -111,12 +112,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.only(right: 8.0),
               child: Tooltip(
                 message: '${user?.name} (${user?.isOwner == true ? 'Owner' : 'Worker'})',
-                child: CircleAvatar(
-                  backgroundColor: Colors.purple[50],
-                  radius: 16,
-                  child: Text(
-                    (user?.name ?? 'U')[0].toUpperCase(),
-                    style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                child: GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => const ProfileDialog(),
+                    );
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Colors.purple[50],
+                    radius: 16,
+                    child: Text(
+                      (user?.name ?? 'U')[0].toUpperCase(),
+                      style: TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),
@@ -124,7 +133,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           else
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Chip(
+              child: ActionChip(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => const ProfileDialog(),
+                  );
+                },
                 avatar: CircleAvatar(
                   backgroundColor: primaryColor,
                   child: Text(

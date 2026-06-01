@@ -76,6 +76,23 @@ class ApiService {
     currentUser = null;
   }
 
+  Future<void> changePassword(String currentPassword, String newPassword, String newPasswordConfirmation) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/change-password'),
+      headers: _getHeaders(),
+      body: jsonEncode({
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': newPasswordConfirmation,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? error['errors']?.toString() ?? 'Failed to change password');
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getWorkers() async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/workers'),
