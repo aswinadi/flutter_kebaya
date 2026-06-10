@@ -255,7 +255,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           unselectedIconTheme: const IconThemeData(color: Colors.black54),
                           unselectedLabelTextStyle: const TextStyle(color: Colors.black54, fontSize: 11),
                           backgroundColor: Colors.white,
-                          elevation: 0,
                           destinations: [
                             const NavigationRailDestination(
                               icon: Icon(Icons.inventory_2_outlined),
