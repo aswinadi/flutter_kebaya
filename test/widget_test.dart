@@ -13,6 +13,7 @@ import 'package:flutter_kebaya/models/user.dart';
 import 'package:flutter_kebaya/models/inventory_item.dart';
 import 'package:flutter_kebaya/screens/schedule_tab.dart';
 import 'package:flutter_kebaya/screens/mix_match_tab.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class MockAuthProvider extends AuthProvider {
   final User? mockUser;
@@ -59,6 +60,10 @@ class MockInventoryProvider extends InventoryProvider {
 }
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('id', null);
+  });
+
   testWidgets('Login screen smoke test', (WidgetTester tester) async {
     final mockConfig = AppConfig(
       apiBaseUrl: 'http://localhost',
@@ -67,7 +72,7 @@ void main() {
 
     await tester.pumpWidget(MyApp(config: mockConfig));
 
-    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.text('Masuk'), findsOneWidget);
   });
 
   testWidgets('ScheduleTab render test', (WidgetTester tester) async {
@@ -117,9 +122,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Active Bookings (1)'), findsOneWidget);
+    expect(find.text('Pemesanan Aktif (1)'), findsOneWidget);
     expect(find.text('Test Customer'), findsOneWidget);
-    expect(find.text('Invoice: INV-001'), findsOneWidget);
+    expect(find.text('Faktur: INV-001'), findsOneWidget);
     expect(find.textContaining('Kebaya Gold'), findsOneWidget);
   });
 
@@ -166,18 +171,23 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify lists are rendered
-    expect(find.text('TOPS (ATASAN)'), findsOneWidget);
-    expect(find.text('BOTTOMS (BAWAHAN)'), findsOneWidget);
+    expect(find.text('ATASAN (TOPS)'), findsOneWidget);
     expect(find.text('Brocade Top Spec'), findsOneWidget);
-    expect(find.text('Songket Bottom Spec'), findsOneWidget);
 
     // Verify initial placeholders
-    expect(find.text('Select Top'), findsOneWidget);
-    expect(find.text('Select Bottom'), findsOneWidget);
+    expect(find.text('Pilih Atasan'), findsOneWidget);
+    expect(find.text('Pilih Bawahan'), findsOneWidget);
 
     // Select Top
     await tester.tap(find.text('Brocade Top Spec'));
     await tester.pumpAndSettle();
+
+    // Switch to Bawahan tab
+    await tester.tap(find.widgetWithText(Tab, 'Bawahan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('BAWAHAN (BOTTOMS)'), findsOneWidget);
+    expect(find.text('Songket Bottom Spec'), findsOneWidget);
 
     // Select Bottom
     await tester.tap(find.text('Songket Bottom Spec'));

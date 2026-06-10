@@ -47,6 +47,7 @@ class _InventoryTabState extends State<InventoryTab> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         color: Colors.white,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -54,7 +55,7 @@ class _InventoryTabState extends State<InventoryTab> {
                   child: TextField(
                     onChanged: (val) => provider.setSearchQuery(val),
                     decoration: InputDecoration(
-                      hintText: 'Search by SKU, name, color...',
+                      hintText: 'Cari berdasarkan SKU, nama, warna, ukuran, atau tag...',
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
@@ -85,7 +86,7 @@ class _InventoryTabState extends State<InventoryTab> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add Component', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text('Tambah Komponen', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
               ],
@@ -99,38 +100,62 @@ class _InventoryTabState extends State<InventoryTab> {
                     value: provider.selectedType,
                     isExpanded: true,
                     decoration: InputDecoration(
-                      labelText: 'Category',
+                      labelText: 'Kategori',
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     items: const [
-                      DropdownMenuItem(value: null, child: Text('All Categories')),
-                      DropdownMenuItem(value: 'top', child: Text('Tops (Atasan)')),
-                      DropdownMenuItem(value: 'bottom', child: Text('Bottoms (Bawahan)')),
+                      DropdownMenuItem(value: null, child: Text('Semua Kategori')),
+                      DropdownMenuItem(value: 'top', child: Text('Atasan (Tops)')),
+                      DropdownMenuItem(value: 'bottom', child: Text('Bawahan (Bottoms)')),
                     ],
                     onChanged: (value) => provider.setFilterType(value),
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Size Filter dropdown
-                Expanded(
-                  child: DropdownButtonFormField<String?>(
-                    value: provider.selectedSize,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Size',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('All Sizes')),
-                      ...['S', 'M', 'L', 'XL', 'XXL', 'Custom']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s))),
-                    ],
-                    onChanged: (value) => provider.setFilterSize(value),
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ChoiceChip(
+                    label: const Text('Semua'),
+                    selected: provider.selectedTag == null,
+                    onSelected: (selected) {
+                      if (selected) {
+                        provider.setSelectedTag(null);
+                      }
+                    },
+                    selectedColor: primaryColor,
+                    labelStyle: TextStyle(
+                      color: provider.selectedTag == null ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ...provider.activeTagsWithCounts.entries.map((entry) {
+                    final tag = entry.key;
+                    final count = entry.value;
+                    final isSelected = provider.selectedTag == tag;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text('$tag ($count)'),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          provider.setSelectedTag(selected ? tag : null);
+                        },
+                        selectedColor: primaryColor,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ],
+              ),
             ),
           ],
         ),
@@ -154,12 +179,12 @@ class _InventoryTabState extends State<InventoryTab> {
                 Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[350]),
                 const SizedBox(height: 16),
                 const Text(
-                  'No Gowns Found',
+                  'Gown Tidak Ditemukan',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Try modifying your filters or add a new component.',
+                  'Coba ubah filter Anda atau tambah komponen baru.',
                   style: TextStyle(color: Colors.grey[500]),
                 ),
               ],
@@ -285,12 +310,12 @@ class _InventoryTabState extends State<InventoryTab> {
                                 ),
                                 const SizedBox(height: 24),
                                 const Text(
-                                  'Gown Component Management',
+                                  'Manajemen Komponen Gown',
                                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Select an item from the catalog on the left to edit its details, or click "Add Component" above to insert a new gown part.',
+                                  'Pilih item dari katalog di sebelah kiri untuk mengubah detailnya, atau klik "Tambah Komponen" di atas untuk menambahkan bagian gown baru.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: Colors.grey[500], fontSize: 13),
                                 ),
@@ -309,7 +334,7 @@ class _InventoryTabState extends State<InventoryTab> {
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
                                   icon: const Icon(Icons.add),
-                                  label: const Text('Add New Gown Component', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  label: const Text('Tambah Komponen Gown Baru', style: TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),

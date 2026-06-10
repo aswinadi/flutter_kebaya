@@ -1,7 +1,7 @@
 import 'config/app_config.dart';
 import 'main_common.dart';
 
-void main() {
+Future<void> main() async {
   const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://gown.maxmar.net',
@@ -11,5 +11,5 @@ void main() {
     apiBaseUrl: apiBaseUrl,
     environmentName: 'Production',
   );
-  mainCommon(config);
+  await mainCommon(config);
 }

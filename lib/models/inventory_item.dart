@@ -10,6 +10,7 @@ class InventoryItem {
   final String? imageUrl;
   final String? imagePath;
   final bool isActive;
+  final List<String> tags;
 
   InventoryItem({
     required this.id,
@@ -23,6 +24,7 @@ class InventoryItem {
     this.imageUrl,
     this.imagePath,
     this.isActive = true,
+    this.tags = const [],
   });
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class InventoryItem {
       imageUrl: json['image_url'] as String?,
       imagePath: json['image_path'] as String?,
       isActive: json['is_active'] ?? true,
+      tags: (json['tags'] as List?)?.map((e) => e.toString()).toList() ?? const [],
     );
   }
 
@@ -54,6 +57,7 @@ class InventoryItem {
       'image_url': imageUrl,
       'image_path': imagePath,
       'is_active': isActive,
+      'tags': tags,
     };
   }
 }

@@ -76,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.error ?? 'Login failed. Please verify credentials.'),
+          content: Text(auth.error ?? 'Masuk gagal. Silakan verifikasi kredensial Anda.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Kebaya Rental Admin',
+                  'Admin Penyewaan Kebaya',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Version 1.0.0 (Build 1)',
+                  'Versi 1.0.0 (Build 1)',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to manage inventory, cataloguing & POS orders',
+                  'Masuk untuk mengelola inventaris, katalog & pesanan POS',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
@@ -160,13 +160,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    labelText: 'Username',
-                    hintText: 'Enter your username',
+                    labelText: 'Nama Pengguna (Username)',
+                    hintText: 'Masukkan nama pengguna Anda',
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (value) =>
-                      value == null || value.trim().isEmpty ? 'Enter a valid username' : null,
+                      value == null || value.trim().isEmpty ? 'Masukkan nama pengguna yang valid' : null,
                 ),
                 const SizedBox(height: 20),
 
@@ -177,8 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
                   decoration: InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
+                    labelText: 'Kata Sandi (Password)',
+                    hintText: 'Masukkan kata sandi Anda',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   validator: (value) =>
-                      value == null || value.length < 4 ? 'Password too short' : null,
+                      value == null || value.length < 4 ? 'Kata sandi terlalu pendek' : null,
                 ),
                 const SizedBox(height: 8),
 
@@ -211,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     GestureDetector(
                       onTap: () => setState(() => _rememberMe = !_rememberMe),
                       child: Text(
-                        'Remember me',
+                        'Ingat saya',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[700],
@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             )
                           : const Text(
-                              'Sign In',
+                              'Masuk',
                               style: TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold),
                             ),
@@ -300,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Premium Indonesian Kebaya Custom Rental & Gown Fitting Suite.',
+                  'Penyewaan Kebaya Kustom Indonesia Premium & Ruang Fitting Gown.',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.85),
                     fontSize: 18,
@@ -313,7 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(Icons.check_circle_outline, color: accentColor, size: 20),
                     const SizedBox(width: 8),
                     const Expanded(
-                      child: Text('Mix-and-Match Inventory CRUD',
+                      child: Text('CRUD Inventaris Padu Padan',
                           style: TextStyle(color: Colors.white70)),
                     ),
                   ],
@@ -324,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(Icons.check_circle_outline, color: accentColor, size: 20),
                     const SizedBox(width: 8),
                     const Expanded(
-                      child: Text('POS Rentals & Booking Flow',
+                      child: Text('Sewa POS & Alur Pemesanan',
                           style: TextStyle(color: Colors.white70)),
                     ),
                   ],
@@ -335,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icon(Icons.check_circle_outline, color: accentColor, size: 20),
                     const SizedBox(width: 8),
                     const Expanded(
-                      child: Text('Labor logs Alteration tracker',
+                      child: Text('Pelacak Catatan Pekerjaan Permak',
                           style: TextStyle(color: Colors.white70)),
                     ),
                   ],

@@ -11,7 +11,7 @@ class InventoryProvider with ChangeNotifier {
 
   String _searchQuery = '';
   String? _selectedType; // 'top', 'bottom', or null (all)
-  String? _selectedSize; // 'S', 'M', 'L', 'XL', 'XXL', 'Custom', or null (all)
+  String? _selectedTag; // Tag name or null (all)
 
   List<InventoryItem> get items => _items;
   bool get isLoading => _isLoading;
@@ -19,20 +19,43 @@ class InventoryProvider with ChangeNotifier {
   
   String get searchQuery => _searchQuery;
   String? get selectedType => _selectedType;
-  String? get selectedSize => _selectedSize;
+  String? get selectedTag => _selectedTag;
 
   List<InventoryItem> get filteredItems {
+    final tokens = _searchQuery.toLowerCase().split(RegExp(r'\s+')).where((token) => token.isNotEmpty).toList();
+
     return _items.where((item) {
-      final matchesSearch = item.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          item.sku.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          item.color.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (item.description ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+      bool matchesSearch = true;
+      if (tokens.isNotEmpty) {
+        matchesSearch = tokens.every((token) {
+          final matchesName = item.name.toLowerCase().contains(token);
+          final matchesSku = item.sku.toLowerCase().contains(token);
+          final matchesColor = item.color.toLowerCase().contains(token);
+          final matchesDesc = (item.description ?? '').toLowerCase().contains(token);
+          final matchesSize = item.size.toLowerCase() == token;
+          final matchesTag = item.tags.any((tag) => tag.toLowerCase().contains(token));
+          return matchesName || matchesSku || matchesColor || matchesDesc || matchesSize || matchesTag;
+        });
+      }
       
       final matchesType = _selectedType == null || item.type == _selectedType;
-      final matchesSize = _selectedSize == null || item.size == _selectedSize;
+      final matchesTag = _selectedTag == null || item.tags.any((tag) => tag.toLowerCase() == _selectedTag!.toLowerCase());
       
-      return matchesSearch && matchesType && matchesSize;
+      return matchesSearch && matchesType && matchesTag;
     }).toList();
+  }
+
+  Map<String, int> get activeTagsWithCounts {
+    final Map<String, int> counts = {};
+    for (var item in _items) {
+      for (var tag in item.tags) {
+        final normalizedTag = tag.trim();
+        if (normalizedTag.isNotEmpty) {
+          counts[normalizedTag] = (counts[normalizedTag] ?? 0) + 1;
+        }
+      }
+    }
+    return counts;
   }
 
   void setSearchQuery(String query) {
@@ -45,15 +68,15 @@ class InventoryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setFilterSize(String? size) {
-    _selectedSize = size;
+  void setSelectedTag(String? tag) {
+    _selectedTag = tag;
     notifyListeners();
   }
 
   void clearFilters() {
     _searchQuery = '';
     _selectedType = null;
-    _selectedSize = null;
+    _selectedTag = null;
     notifyListeners();
   }
 
@@ -81,6 +104,7 @@ class InventoryProvider with ChangeNotifier {
     required String description,
     double? rentalRate,
     File? imageFile,
+    List<String>? tags,
   }) async {
     _isLoading = true;
     _error = null;
@@ -95,6 +119,7 @@ class InventoryProvider with ChangeNotifier {
         description: description,
         rentalRate: rentalRate,
         imageFile: imageFile,
+        tags: tags,
       );
       _items.insert(0, newItem);
       _isLoading = false;
@@ -117,6 +142,7 @@ class InventoryProvider with ChangeNotifier {
     required String description,
     double? rentalRate,
     File? imageFile,
+    List<String>? tags,
   }) async {
     _isLoading = true;
     _error = null;
@@ -132,6 +158,7 @@ class InventoryProvider with ChangeNotifier {
         description: description,
         rentalRate: rentalRate,
         imageFile: imageFile,
+        tags: tags,
       );
       
       final index = _items.indexWhere((element) => element.id == id);

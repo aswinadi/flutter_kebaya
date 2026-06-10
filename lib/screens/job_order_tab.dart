@@ -51,12 +51,12 @@ class _JobOrderTabState extends State<JobOrderTab> {
                 Icon(Icons.checklist_rtl_outlined, size: 64, color: Colors.grey[300]),
                 const SizedBox(height: 16),
                 const Text(
-                  'No Job Orders Found',
+                  'Pekerjaan Permak Tidak Ditemukan',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.grey),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'All alteration jobs will appear here chronologically.',
+                  'Semua pekerjaan permak akan muncul di sini secara kronologis.',
                   style: TextStyle(color: Colors.grey[500]),
                 ),
               ],
@@ -80,15 +80,19 @@ class _JobOrderTabState extends State<JobOrderTab> {
           lastDate = job.dueDate;
 
           Color badgeColor;
+          String statusText;
           switch (job.status) {
             case 'completed':
               badgeColor = Colors.green;
+              statusText = 'SELESAI';
               break;
             case 'in_progress':
               badgeColor = Colors.blue;
+              statusText = 'SEDANG DIKERJAKAN';
               break;
             default:
               badgeColor = Colors.amber;
+              statusText = 'TERTUNDA';
           }
 
           final cardWidget = Card(
@@ -107,7 +111,7 @@ class _JobOrderTabState extends State<JobOrderTab> {
                 children: [
                   Expanded(
                     child: Text(
-                      job.customerName ?? 'Walk-In Customer',
+                      job.customerName ?? 'Pelanggan Walk-In',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ),
@@ -118,7 +122,7 @@ class _JobOrderTabState extends State<JobOrderTab> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      job.status.replaceAll('_', ' ').toUpperCase(),
+                      statusText,
                       style: TextStyle(
                         fontSize: 10,
                         color: badgeColor,
@@ -142,7 +146,7 @@ class _JobOrderTabState extends State<JobOrderTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Deadline: ${DateFormat('d MMM y • HH:mm').format(job.dueDate)}',
+                          'Tenggat: ${DateFormat('d MMM y • HH:mm', 'id').format(job.dueDate)}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.red[800],
@@ -168,7 +172,7 @@ class _JobOrderTabState extends State<JobOrderTab> {
                     MaterialPageRoute(
                       builder: (_) => Scaffold(
                         appBar: AppBar(
-                          title: const Text('Alteration Details'),
+                          title: const Text('Detail Permak'),
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.black87,
                           elevation: 0.5,
@@ -198,7 +202,7 @@ class _JobOrderTabState extends State<JobOrderTab> {
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0, top: 16.0, bottom: 8.0),
                   child: Text(
-                    DateFormat('EEEE, MMMM d, y').format(job.dueDate),
+                    DateFormat('EEEE, d MMMM y', 'id').format(job.dueDate),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -271,12 +275,12 @@ class _JobOrderTabState extends State<JobOrderTab> {
                             ),
                             const SizedBox(height: 24),
                             const Text(
-                              'Alteration Job Details',
+                              'Detail Pekerjaan Permak',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Select a job order from the list on the left to review alteration instructions, log employee labor, and track fitting status.',
+                              'Pilih perintah pekerjaan dari daftar di sebelah kiri untuk meninjau instruksi permak, mencatat tenaga kerja karyawan, dan melacak status fitting.',
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.grey[500], fontSize: 13),
                             ),
@@ -350,7 +354,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
     if (!widget.isOwner) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Access Denied: Only Caroline Lauda (Owner) can update deadlines.'),
+          content: Text('Akses Ditolak: Hanya Pemilik yang dapat memperbarui tenggat waktu.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -424,14 +428,14 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Job details updated successfully!'),
+          content: Text('Detail pekerjaan berhasil diperbarui!'),
           backgroundColor: Colors.green,
         ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(provider.error ?? 'Failed to update job'),
+          content: Text(provider.error ?? 'Gagal memperbarui pekerjaan'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -444,7 +448,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
 
     if (workers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No workers list available. Fetching...')),
+        const SnackBar(content: Text('Daftar karyawan tidak tersedia. Mengambil...')),
       );
       provider.fetchWorkers();
       return;
@@ -462,7 +466,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Log Tailor / Worker Labor'),
+              title: const Text('Catat Pekerjaan Penjahit / Karyawan'),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               content: SingleChildScrollView(
                 child: Column(
@@ -473,7 +477,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                     DropdownButtonFormField<int>(
                       value: selectedWorkerId,
                       decoration: InputDecoration(
-                        labelText: 'Select Tailor / Employee',
+                        labelText: 'Pilih Penjahit / Karyawan',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       items: workers.map((w) {
@@ -498,7 +502,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                             initialValue: '0',
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                              labelText: 'Days Worked',
+                              labelText: 'Hari Kerja',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             onChanged: (val) {
@@ -512,7 +516,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                             initialValue: '0',
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
-                              labelText: 'Hours Worked',
+                              labelText: 'Jam Kerja',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             onChanged: (val) {
@@ -534,15 +538,15 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
 
                     // Specialties
                     const Text(
-                      'Specialty Tagging',
+                      'Tag Keahlian Khusus',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     ...{
-                      'borci': 'Borci (Beading/Sequins)',
-                      'embroidery': 'Complex Embroidery',
-                      'fitting': 'Fitting Adjustments',
-                      'alteration': 'Standard Alteration',
+                      'borci': 'Borci (Payet/Mote)',
+                      'embroidery': 'Bordir Kompleks',
+                      'fitting': 'Penyesuaian Fitting',
+                      'alteration': 'Permak Standar',
                     }.entries.map((entry) {
                       return CheckboxListTile(
                         title: Text(entry.value, style: const TextStyle(fontSize: 13)),
@@ -566,8 +570,8 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                       controller: descriptionController,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        labelText: 'Labor Notes / Comments',
-                        hintText: 'e.g., Shortened skirt hem by 5cm',
+                        labelText: 'Catatan Pekerjaan / Komentar',
+                        hintText: 'misal: Memendekkan keliman rok sebanyak 5cm',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
@@ -577,14 +581,14 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: const Text('Batal'),
                 ),
                 ElevatedButton(
                   onPressed: () async {
                     if (selectedWorkerId == null) return;
                     if (days == 0 && hours == 0) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Log days or hours must be greater than zero!')),
+                        const SnackBar(content: Text('Hari atau jam kerja yang dicatat harus lebih besar dari nol!')),
                       );
                       return;
                     }
@@ -597,7 +601,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                       hours: hours,
                       crafts: selectedCrafts,
                       description: descriptionController.text.trim().isEmpty 
-                          ? 'Alteration works' 
+                          ? 'Pekerjaan permak' 
                           : descriptionController.text.trim(),
                     );
 
@@ -605,14 +609,14 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                       navigator.pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Labor log added!'),
+                          content: Text('Catatan pekerjaan ditambahkan!'),
                           backgroundColor: Colors.green,
                         ),
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(provider.error ?? 'Failed to log labor'),
+                          content: Text(provider.error ?? 'Gagal mencatat pekerjaan'),
                           backgroundColor: Colors.redAccent,
                         ),
                       );
@@ -622,7 +626,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                     backgroundColor: Colors.purple[900],
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Submit Log'),
+                  child: const Text('Kirim Catatan'),
                 ),
               ],
             );
@@ -637,17 +641,17 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete Labor Log?'),
-          content: const Text('This will remove the logged hours and recalculate total audit man-days. Proceed?'),
+          title: const Text('Hapus Catatan Pekerjaan?'),
+          content: const Text('Tindakan ini akan menghapus jam kerja yang dicatat dan menghitung ulang total man-days audit. Lanjutkan?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: const Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+              child: const Text('Hapus', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -660,7 +664,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Labor log deleted successfully!'),
+            content: Text('Catatan pekerjaan berhasil dihapus!'),
             backgroundColor: Colors.blueGrey,
           ),
         );
@@ -672,7 +676,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
   Widget build(BuildContext context) {
     final job = _getJob();
     if (job == null) {
-      return const Center(child: Text('Loading details...'));
+      return const Center(child: Text('Memuat detail...'));
     }
 
     final primaryColor = Colors.purple[900]!;
@@ -703,17 +707,17 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            job.itemName ?? 'Custom Kebaya',
+                            job.itemName ?? 'Kebaya Kustom',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'SKU: ${job.itemSku} • Size: ${job.itemSize} • Color: ${job.itemColor}',
+                            'SKU: ${job.itemSku} • Ukuran: ${job.itemSize} • Warna: ${job.itemColor}',
                             style: TextStyle(color: Colors.grey[700], fontSize: 12),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Invoice: [${job.rentalInvoice}] • Customer: ${job.customerName}',
+                            'Faktur: [${job.rentalInvoice}] • Pelanggan: ${job.customerName}',
                             style: TextStyle(color: Colors.grey[600], fontSize: 12),
                           ),
                         ],
@@ -738,7 +742,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Technical & Deadline Controls',
+                      'Kontrol Teknis & Tenggat Waktu',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
                     ),
                     const SizedBox(height: 16),
@@ -749,13 +753,13 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                           child: DropdownButtonFormField<String>(
                             value: _status,
                             decoration: InputDecoration(
-                              labelText: 'Alteration Status',
+                              labelText: 'Status Permak',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             items: const [
-                              DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                              DropdownMenuItem(value: 'in_progress', child: Text('In Progress')),
-                              DropdownMenuItem(value: 'completed', child: Text('Completed')),
+                              DropdownMenuItem(value: 'pending', child: Text('Tertunda')),
+                              DropdownMenuItem(value: 'in_progress', child: Text('Sedang Dikerjakan')),
+                              DropdownMenuItem(value: 'completed', child: Text('Selesai')),
                             ],
                             onChanged: (val) {
                               setState(() {
@@ -783,7 +787,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Due Date (Owner Only)',
+                                    'Tenggat Waktu (Hanya Pemilik)',
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: widget.isOwner ? Colors.purple[800] : Colors.grey[600],
@@ -792,8 +796,8 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                                   const SizedBox(height: 4),
                                   Text(
                                     _dueDate == null
-                                        ? 'Set Target Due Date'
-                                        : DateFormat('d MMM y • HH:mm').format(_dueDate!),
+                                        ? 'Atur Target Tenggat Waktu'
+                                        : DateFormat('d MMM y • HH:mm', 'id').format(_dueDate!),
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
@@ -812,8 +816,8 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                       controller: _notesController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        labelText: 'Technical Alteration Notes ("Permak")',
-                        hintText: 'Enter specifications, length changes, sizes...',
+                        labelText: 'Catatan Teknis Permak',
+                        hintText: 'Masukkan spesifikasi, perubahan panjang, ukuran...',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
@@ -821,7 +825,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                     ElevatedButton.icon(
                       onPressed: _saveChanges,
                       icon: const Icon(Icons.save),
-                      label: const Text('Save Alteration Details'),
+                      label: const Text('Simpan Detail Permak'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
@@ -854,12 +858,12 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Tailor / Worker Labor Auditing',
+                              'Audit Pekerjaan Penjahit / Karyawan',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Master Total: ${job.totalManDays.toStringAsFixed(3)} Man-Days',
+                              'Total Master: ${job.totalManDays.toStringAsFixed(3)} Man-Days',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
                             ),
                           ],
@@ -867,7 +871,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                         ElevatedButton.icon(
                           onPressed: _showAddLaborDialog,
                           icon: const Icon(Icons.add_task),
-                          label: const Text('Log Labor', style: TextStyle(fontSize: 12)),
+                          label: const Text('Catat Pekerjaan', style: TextStyle(fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueGrey[800],
                             foregroundColor: Colors.white,
@@ -887,7 +891,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                               Icon(Icons.more_time, size: 36, color: Colors.grey[300]),
                               const SizedBox(height: 8),
                               Text(
-                                'No labor hours logged yet.',
+                                'Belum ada jam kerja yang dicatat.',
                                 style: TextStyle(color: Colors.grey[400], fontSize: 12),
                               ),
                             ],
@@ -922,11 +926,11 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              log.workerName ?? 'Employee #${log.workerId}',
+                                              log.workerName ?? 'Karyawan #${log.workerId}',
                                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                             ),
                                             Text(
-                                              '${log.manDays.toStringAsFixed(3)} MD (${log.days}d ${log.hours}h)',
+                                              '${log.manDays.toStringAsFixed(3)} MD (${log.days}h ${log.hours}j)',
                                               style: TextStyle(
                                                 color: primaryColor,
                                                 fontWeight: FontWeight.bold,

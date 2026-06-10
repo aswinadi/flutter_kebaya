@@ -89,7 +89,7 @@ class GownCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        item.type.toUpperCase(),
+                        item.type == 'top' ? 'ATASAN' : 'BAWAHAN',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -174,7 +174,7 @@ class GownCard extends StatelessWidget {
                     )
                   else
                     const Text(
-                      'Rate Hidden',
+                      'Tarif Tersembunyi',
                       style: TextStyle(
                         fontStyle: FontStyle.italic,
                         fontSize: 13,

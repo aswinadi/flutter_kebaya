@@ -30,7 +30,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
   final _groupController = TextEditingController();
   
   DateTime? _selectedDate;
-  File? _clientPic;
+  final List<File> _clientPicFiles = [];
   final List<File> _beforePhotos = [];
   
   final List<_CartItem> _cart = [];
@@ -79,11 +79,11 @@ class _CheckoutTabState extends State<CheckoutTab> {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Availability Conflict!'),
+            title: const Text('Konflik Ketersediaan!'),
             content: Text(
-              'The following items in your cart are already booked (including the 28-day block rule) on this date:\n\n'
+              'Item berikut dalam keranjang Anda sudah dipesan (termasuk aturan pemblokiran 28 hari) pada tanggal ini:\n\n'
               '${conflictNames.map((n) => '• $n').join('\n')}\n\n'
-              'Please remove them or select another date.',
+              'Silakan hapus item tersebut atau pilih tanggal lain.',
             ),
             actions: [
               TextButton(
@@ -97,7 +97,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to check availability: $e')),
+          SnackBar(content: Text('Gagal memeriksa ketersediaan: $e')),
         );
       }
     } finally {
@@ -116,7 +116,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     if (_selectedDate != null && _unavailableItemIds.contains(item.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('This item is unavailable on the chosen date! (28-day block)'),
+          content: Text('Item ini tidak tersedia pada tanggal yang dipilih! (Blokir 28 hari)'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -125,7 +125,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     if (_cart.any((element) => element.item.id == item.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Item is already in the cart!'),
+          content: Text('Item sudah ada di keranjang!'),
           backgroundColor: Colors.amber,
         ),
       );
@@ -151,46 +151,74 @@ class _CheckoutTabState extends State<CheckoutTab> {
     }
   }
 
-  Future<void> _pickClientPic() async {
+  Future<void> _pickImage(ImageSource source, bool isClientPic) async {
     try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 70,
-      );
-      if (pickedFile != null) {
-        setState(() {
-          _clientPic = File(pickedFile.path);
-        });
+      if (source == ImageSource.gallery) {
+        final List<XFile> pickedFiles = await _imagePicker.pickMultiImage(
+          imageQuality: 70,
+        );
+        if (pickedFiles.isNotEmpty) {
+          setState(() {
+            if (isClientPic) {
+              _clientPicFiles.addAll(pickedFiles.map((x) => File(x.path)));
+            } else {
+              _beforePhotos.addAll(pickedFiles.map((x) => File(x.path)));
+            }
+          });
+        }
+      } else {
+        final XFile? pickedFile = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 70,
+        );
+        if (pickedFile != null) {
+          setState(() {
+            if (isClientPic) {
+              _clientPicFiles.add(File(pickedFile.path));
+            } else {
+              _beforePhotos.add(File(pickedFile.path));
+            }
+          });
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to take photo: $e')),
+        SnackBar(content: Text('Gagal mengambil gambar: $e')),
       );
     }
   }
 
-  Future<void> _pickBeforePhoto() async {
-    try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 70,
-      );
-      if (pickedFile != null) {
-        setState(() {
-          _beforePhotos.add(File(pickedFile.path));
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to take photo: $e')),
-      );
-    }
-  }
-
-  void _removeBeforePhoto(int index) {
-    setState(() {
-      _beforePhotos.removeAt(index);
-    });
+  void _showImagePickerOptions(bool isClientPic) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Ambil Foto dengan Kamera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera, isClientPic);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Pilih dari Galeri'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery, isClientPic);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _selectDate() async {
@@ -256,7 +284,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select an event date!'),
+          content: Text('Silakan pilih tanggal acara!'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -268,7 +296,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     if (unavailableInCart.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cannot checkout: ${unavailableInCart.first.item.name} is unavailable.'),
+          content: Text('Tidak dapat checkout: ${unavailableInCart.first.item.name} tidak tersedia.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -278,7 +306,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     if (_cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Your checkout cart is empty! Add at least one gown component.'),
+          content: Text('Keranjang belanja Anda kosong! Tambahkan setidaknya satu komponen gown.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -297,14 +325,14 @@ class _CheckoutTabState extends State<CheckoutTab> {
         'inventory_item_id': cartItem.item.id,
         'rental_price': cartItem.customPrice,
       }).toList(),
-      clientPicFile: _clientPic,
-      beforePhotos: _beforePhotos,
+      clientPicFiles: _clientPicFiles.isEmpty ? null : _clientPicFiles,
+      beforePhotos: _beforePhotos.isEmpty ? null : _beforePhotos,
     );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Rental Booking Created Successfully!'),
+          content: Text('Pemesanan Sewa Berhasil Dibuat!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -314,7 +342,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
         _phoneController.clear();
         _groupController.clear();
         _selectedDate = null;
-        _clientPic = null;
+        _clientPicFiles.clear();
         _beforePhotos.clear();
         _unavailableItemIds.clear();
       });
@@ -324,7 +352,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(rentalProvider.error ?? 'Failed to checkout'),
+          content: Text(rentalProvider.error ?? 'Gagal melakukan checkout'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -357,7 +385,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '1. Customer & Event Details',
+                        '1. Detail Pelanggan & Acara',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -368,12 +396,12 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       TextFormField(
                         controller: _nameController,
                         decoration: InputDecoration(
-                          labelText: 'Customer Full Name',
+                          labelText: 'Nama Lengkap Pelanggan',
                           prefixIcon: const Icon(Icons.person_outline),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (value) => value == null || value.trim().isEmpty
-                            ? 'Enter customer name'
+                            ? 'Masukkan nama pelanggan'
                             : null,
                       ),
                       const SizedBox(height: 16),
@@ -381,7 +409,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: 'Customer Phone (e.g. +628...)',
+                          labelText: 'Telepon Pelanggan (misal +628...)',
                           prefixIcon: const Icon(Icons.phone_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -390,8 +418,8 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       TextFormField(
                         controller: _groupController,
                         decoration: InputDecoration(
-                          labelText: 'Group Order / Fitting Name (Optional)',
-                          hintText: 'e.g. Petra Graduation Group',
+                          labelText: 'Nama Pemesanan Grup / Fitting (Opsional)',
+                          hintText: 'misal: Grup Wisuda Petra',
                           prefixIcon: const Icon(Icons.group_outlined),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -413,8 +441,8 @@ class _CheckoutTabState extends State<CheckoutTab> {
                               Expanded(
                                 child: Text(
                                   _selectedDate == null
-                                      ? 'Pick Event Target Date & Time'
-                                      : 'Event Date: ${DateFormat('EEEE, MMMM d, y • HH:mm').format(_selectedDate!)}',
+                                      ? 'Pilih Tanggal & Waktu Acara'
+                                      : 'Tanggal Acara: ${DateFormat('EEEE, d MMMM y • HH:mm', 'id').format(_selectedDate!)}',
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: _selectedDate == null ? FontWeight.normal : FontWeight.bold,
@@ -449,7 +477,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '2. Client Gown Fitting Photo',
+                        '2. Foto Fitting Gown Klien',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -457,39 +485,68 @@ class _CheckoutTabState extends State<CheckoutTab> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Center(
-                        child: _clientPic == null
-                            ? OutlinedButton.icon(
-                                onPressed: _pickClientPic,
-                                icon: const Icon(Icons.camera_alt_outlined),
-                                label: const Text('Capture Client Outfit Photo'),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              )
-                            : Column(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.file(
-                                      _clientPic!,
-                                      height: 180,
-                                      width: 180,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextButton.icon(
-                                    onPressed: _pickClientPic,
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Retake Photo'),
-                                  ),
-                                ],
-                              ),
+                      OutlinedButton.icon(
+                        onPressed: () => _showImagePickerOptions(true),
+                        icon: const Icon(Icons.add_a_photo_outlined),
+                        label: const Text('Tambah Foto Fitting'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
+                      if (_clientPicFiles.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 100,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _clientPicFiles.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(
+                                        _clientPicFiles[index],
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 2,
+                                      right: 2,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _clientPicFiles.removeAt(index);
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -507,7 +564,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '3. Gown Condition Photos (Audit Trail)',
+                        '3. Foto Kondisi Gown (Audit Trail)',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -516,15 +573,16 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Snap photos of existing fabric condition or fit problems before rental.',
+                        'Ambil foto kondisi kain yang ada atau masalah kecocokan sebelum penyewaan.',
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
-                        onPressed: _pickBeforePhoto,
+                        onPressed: () => _showImagePickerOptions(false),
                         icon: const Icon(Icons.add_a_photo_outlined),
-                        label: const Text('Add Condition Photo'),
+                        label: const Text('Tambah Foto Kondisi'),
                         style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -555,7 +613,11 @@ class _CheckoutTabState extends State<CheckoutTab> {
                                       top: 2,
                                       right: 2,
                                       child: GestureDetector(
-                                        onTap: () => _removeBeforePhoto(index),
+                                        onTap: () {
+                                          setState(() {
+                                            _beforePhotos.removeAt(index);
+                                          });
+                                        },
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
                                           decoration: const BoxDecoration(
@@ -598,7 +660,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     child: rentalProv.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
-                            'Complete Booking & Checkout (Rp ${NumberFormat('#,###').format(_totalAmount)})',
+                            'Selesaikan Pemesanan & Checkout (Rp ${NumberFormat('#,###').format(_totalAmount)})',
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                   );
@@ -614,11 +676,18 @@ class _CheckoutTabState extends State<CheckoutTab> {
     // Right Cart/Inventory Picker Panel
     Widget buildCartPanel() {
       final invProvider = Provider.of<InventoryProvider>(context);
+      final tokens = _catalogSearchQuery.toLowerCase().split(RegExp(r'\s+')).where((token) => token.isNotEmpty).toList();
       final searchResults = invProvider.items.where((item) {
-        if (_catalogSearchQuery.isEmpty) return true;
-        return item.name.toLowerCase().contains(_catalogSearchQuery.toLowerCase()) ||
-            item.sku.toLowerCase().contains(_catalogSearchQuery.toLowerCase()) ||
-            item.color.toLowerCase().contains(_catalogSearchQuery.toLowerCase());
+        if (tokens.isEmpty) return true;
+        return tokens.every((token) {
+          final matchesName = item.name.toLowerCase().contains(token);
+          final matchesSku = item.sku.toLowerCase().contains(token);
+          final matchesColor = item.color.toLowerCase().contains(token);
+          final matchesDesc = (item.description ?? '').toLowerCase().contains(token);
+          final matchesSize = item.size.toLowerCase() == token;
+          final matchesTag = item.tags.any((tag) => tag.toLowerCase().contains(token));
+          return matchesName || matchesSku || matchesColor || matchesDesc || matchesSize || matchesTag;
+        });
       }).toList();
 
       return Column(
@@ -643,7 +712,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Selected Mix-and-Match Items',
+                          'Item Padu Padan Terpilih',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -657,7 +726,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${_cart.length} Parts Selected',
+                            '${_cart.length} Bagian Terpilih',
                             style: TextStyle(
                               fontSize: 12,
                               color: primaryColor,
@@ -676,14 +745,14 @@ class _CheckoutTabState extends State<CheckoutTab> {
                                 children: [
                                   Icon(Icons.shopping_bag_outlined, size: 48, color: Colors.grey[300]),
                                   const SizedBox(height: 12),
-                                  Text(
-                                    'Cart is empty',
-                                    style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold),
+                                  const Text(
+                                    'Keranjang kosong',
+                                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    'Add tops or bottoms from the catalogue search below',
-                                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                  const Text(
+                                    'Tambahkan atasan atau bawahan dari pencarian katalog di bawah',
+                                    style: TextStyle(color: Colors.grey, fontSize: 12),
                                     textAlign: TextAlign.center,
                                   ),
                                 ],
@@ -736,7 +805,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                               Text(
-                                                '${cartItem.item.sku} • Size: ${cartItem.item.size} • ${cartItem.item.color}',
+                                                '${cartItem.item.sku} • Ukuran: ${cartItem.item.size} • ${cartItem.item.color}',
                                                 style: TextStyle(color: Colors.grey[600], fontSize: 11),
                                               ),
                                             ],
@@ -751,7 +820,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                                             keyboardType: TextInputType.number,
                                             decoration: InputDecoration(
                                               prefixText: 'Rp ',
-                                              labelText: 'Rent Price',
+                                              labelText: 'Harga Sewa',
                                               labelStyle: const TextStyle(fontSize: 10),
                                               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -786,7 +855,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Estimated Total:',
+                          'Estimasi Total:',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         Text(
@@ -827,7 +896,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: 'Search stock to add (SKU, name, color)...',
+                        hintText: 'Cari stok untuk ditambahkan (SKU, nama, warna, ukuran, tag)...',
                         prefixIcon: const Icon(Icons.search, size: 20),
                         isDense: true,
                         contentPadding: const EdgeInsets.all(10),
@@ -841,7 +910,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                           : searchResults.isEmpty
                               ? Center(
                                   child: Text(
-                                    'No matching gowns found in inventory.',
+                                    'Tidak ada gown yang cocok ditemukan di inventaris.',
                                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                                   ),
                                 )
@@ -880,10 +949,10 @@ class _CheckoutTabState extends State<CheckoutTab> {
                                       ),
                                       subtitle: isUnavailable
                                           ? const Text(
-                                              'Reserved / Blocked (28-day block)',
+                                              'Dipesan / Diblokir (Blokir 28 hari)',
                                               style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 10),
                                             )
-                                          : Text('${item.sku} • Sz: ${item.size} • Rp ${NumberFormat('#,###').format(item.rentalRate ?? 0)}'),
+                                          : Text('${item.sku} • Uk: ${item.size} • Rp ${NumberFormat('#,###').format(item.rentalRate ?? 0)}'),
                                       trailing: IconButton(
                                         icon: Icon(
                                           isUnavailable ? Icons.block : Icons.add_circle,
@@ -934,7 +1003,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.shopping_cart),
-          label: Text('Cart (${_cart.length}) - Rp ${NumberFormat('#,###').format(_totalAmount)}'),
+          label: Text('Keranjang (${_cart.length}) - Rp ${NumberFormat('#,###').format(_totalAmount)}'),
         ),
       );
     } else {

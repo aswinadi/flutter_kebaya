@@ -7,12 +7,16 @@ import 'providers/rental_provider.dart';
 import 'providers/job_order_provider.dart';
 import 'screens/login_screen.dart';
 import 'services/api_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void mainCommon(AppConfig config) {
+Future<void> mainCommon(AppConfig config) async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Set default API baseUrl based on the environment configuration
   ApiService().updateBaseUrl(config.apiBaseUrl);
+
+  // Initialize Indonesian locale date formatting
+  await initializeDateFormatting('id', null);
 
   runApp(MyApp(config: config));
 }

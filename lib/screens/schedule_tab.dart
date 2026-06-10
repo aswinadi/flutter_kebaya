@@ -46,12 +46,12 @@ class _ScheduleTabState extends State<ScheduleTab> {
     return (toDate.difference(fromDate).inHours / 24).round().abs();
   }
 
-  // Helper: Get list of rentals whose block period (±14 days) covers a specific day
-  List<Rental> _getBlockRentalsForDay(DateTime day, List<Rental> rentals) {
+  // Helper: Get list of rentals whose block period covers a specific day
+  List<Rental> _getBlockRentalsForDay(DateTime day, List<Rental> rentals, int lockDays) {
     return rentals.where((rental) {
       if (rental.status == 'cancelled') return false;
       final diff = _daysBetween(rental.eventDate, day);
-      return diff > 0 && diff <= 14;
+      return diff > 0 && diff <= lockDays;
     }).toList();
   }
 
@@ -119,7 +119,6 @@ class _ScheduleTabState extends State<ScheduleTab> {
     final nameCtrl = TextEditingController(text: rental.customerName);
     final phoneCtrl = TextEditingController(text: rental.customerPhone ?? '');
     final notesCtrl = TextEditingController(text: rental.notes ?? '');
-    DateTime? selectedDate = rental.eventDate;
     String selectedStatus = rental.status;
 
     showModalBottomSheet(
@@ -140,32 +139,32 @@ class _ScheduleTabState extends State<ScheduleTab> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Manage Rental: ${rental.invoiceNumber}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('Kelola Penyewaan: ${rental.invoiceNumber}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 16),
                     TextField(
                       controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Customer Name', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'Nama Pelanggan', border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: phoneCtrl,
-                      decoration: const InputDecoration(labelText: 'Customer Phone', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'Telepon Pelanggan', border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: notesCtrl,
                       maxLines: 3,
-                      decoration: const InputDecoration(labelText: 'Staff Notes', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'Catatan Staf', border: OutlineInputBorder()),
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: selectedStatus,
                       decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
                       items: const [
-                        DropdownMenuItem(value: 'booked', child: Text('Booked')),
-                        DropdownMenuItem(value: 'picked_up', child: Text('Picked Up')),
-                        DropdownMenuItem(value: 'returned', child: Text('Returned')),
-                        DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
+                        DropdownMenuItem(value: 'booked', child: Text('Dipesan')),
+                        DropdownMenuItem(value: 'picked_up', child: Text('Diambil (Picked Up)')),
+                        DropdownMenuItem(value: 'returned', child: Text('Dikembalikan (Returned)')),
+                        DropdownMenuItem(value: 'cancelled', child: Text('Dibatalkan (Cancelled)')),
                       ],
                       onChanged: (val) {
                         if (val != null) setModalState(() => selectedStatus = val);
@@ -174,7 +173,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.save),
-                      label: const Text('Update Rental'),
+                      label: const Text('Perbarui Penyewaan'),
                       style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                       onPressed: () async {
                         final prov = Provider.of<RentalProvider>(context, listen: false);
@@ -187,7 +186,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                         );
                         if (success && mounted) {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rental updated successfully')));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penyewaan berhasil diperbarui')));
                         } else if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${prov.error}')));
                         }
@@ -197,16 +196,16 @@ class _ScheduleTabState extends State<ScheduleTab> {
                     if (Provider.of<AuthProvider>(context, listen: false).user?.isOwner == true)
                       TextButton.icon(
                         icon: const Icon(Icons.archive, color: Colors.red),
-                        label: const Text('Set as Inactive', style: TextStyle(color: Colors.red)),
+                        label: const Text('Setel sebagai Tidak Aktif', style: TextStyle(color: Colors.red)),
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
                             context: context,
                             builder: (ctx) => AlertDialog(
-                              title: const Text('Deactivate Rental'),
-                              content: const Text('Are you sure you want to deactivate this rental? It will be hidden from normal views.'),
+                              title: const Text('Nonaktifkan Penyewaan'),
+                              content: const Text('Apakah Anda yakin ingin menonaktifkan penyewaan ini? Ini akan disembunyikan dari tampilan biasa.'),
                               actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Deactivate', style: TextStyle(color: Colors.red))),
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                                TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Nonaktifkan', style: TextStyle(color: Colors.red))),
                               ],
                             ),
                           );
@@ -215,7 +214,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                             final success = await prov.deactivateRental(rental.id);
                             if (success && mounted) {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rental deactivated')));
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Penyewaan dinonaktifkan')));
                             }
                           }
                         },
@@ -241,7 +240,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
 
     Widget buildCalendarGrid() {
       final days = _getMonthDays(_focusedMonth);
-      final weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+      final weekDays = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
 
       return Column(
         children: [
@@ -254,7 +253,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                 onPressed: _prevMonth,
               ),
               Text(
-                DateFormat('MMMM yyyy').format(_focusedMonth),
+                DateFormat('MMMM yyyy', 'id').format(_focusedMonth),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               IconButton(
@@ -303,7 +302,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                   DateTime.now().day == day.day;
 
               final dayRentals = _getRentalsForDay(day, rentalProvider.rentals);
-              final blockRentals = _getBlockRentalsForDay(day, rentalProvider.rentals);
+              final blockRentals = _getBlockRentalsForDay(day, rentalProvider.rentals, rentalProvider.dateLockingPeriod);
 
               final List<Widget> cellIndicators = [];
               for (final rental in dayRentals) {
@@ -450,12 +449,12 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                   color: Colors.red[50],
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(
-                                  'BLOCKING',
+                                child: const Text(
+                                  'BLOKIR',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.red[800],
+                                    color: Colors.red,
                                   ),
                                 ),
                               )
@@ -469,7 +468,9 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  rental.status.toUpperCase().replaceAll('_', ' '),
+                                  rental.status == 'picked_up'
+                                      ? 'DIAMBIL'
+                                      : (rental.status == 'returned' ? 'DIKEMBALIKAN' : 'DIPESAN'),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -484,39 +485,39 @@ class _ScheduleTabState extends State<ScheduleTab> {
                         const SizedBox(height: 8),
                         if (isBlockPeriod) ...[
                           Text(
-                            'Event Date: ${DateFormat('EEEE, MMMM d, y • HH:mm').format(rental.eventDate)}',
+                            'Tanggal Acara: ${DateFormat('EEEE, d MMMM y • HH:mm', 'id').format(rental.eventDate)}',
                             style: TextStyle(fontWeight: FontWeight.bold, color: rentalColor, fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                         ] else ...[
                           Text(
-                            'Pickup Date & Time: ${DateFormat('EEEE, MMMM d, y • HH:mm').format(rental.eventDate)}',
+                            'Tanggal Pengambilan: ${DateFormat('EEEE, d MMMM y • HH:mm', 'id').format(rental.eventDate)}',
                             style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor, fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                         ],
                         Text(
-                          'Invoice: ${rental.invoiceNumber}',
+                          'Faktur: ${rental.invoiceNumber}',
                           style: TextStyle(fontFamily: 'monospace', fontSize: 13, color: Colors.grey[700]),
                         ),
                         if (rental.customerPhone != null)
                           Text(
-                            'Phone: ${rental.customerPhone}',
+                            'Telepon: ${rental.customerPhone}',
                             style: const TextStyle(fontSize: 13, color: Colors.black87),
                           ),
                         if (rental.groupOrderName != null)
                           Text(
-                            'Group: ${rental.groupOrderName}',
+                            'Grup: ${rental.groupOrderName}',
                             style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic, color: Colors.grey[800]),
                           ),
                         if (rental.notes != null && rental.notes!.isNotEmpty)
                           Text(
-                            'Notes: ${rental.notes}',
+                            'Catatan: ${rental.notes}',
                             style: TextStyle(fontSize: 13, color: Colors.grey[800]),
                           ),
                         const Divider(height: 24),
                         const Text(
-                          'Rented Items:',
+                          'Item yang Disewa:',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
                         ),
                         const SizedBox(height: 8),
@@ -540,7 +541,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    '${item.name} (${item.sku} • Size: ${item.size})',
+                                    '${item.name} (${item.sku} • Ukuran: ${item.size})',
                                     style: const TextStyle(fontSize: 12, color: Colors.black87),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -558,21 +559,25 @@ class _ScheduleTabState extends State<ScheduleTab> {
                         if (rentalJobs.isNotEmpty) ...[
                           const Divider(height: 24),
                           const Text(
-                            'Alteration Job Orders:',
+                            'Perintah Pekerjaan Permak:',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
                           ),
                           const SizedBox(height: 8),
                           ...rentalJobs.map((job) {
                             Color statusColor;
+                            String statusText;
                             switch (job.status) {
                               case 'completed':
                                 statusColor = Colors.green;
+                                statusText = 'SELESAI';
                                 break;
                               case 'in_progress':
                                 statusColor = Colors.blue;
+                                statusText = 'SEDANG DIKERJAKAN';
                                 break;
                               default:
                                 statusColor = Colors.amber[800]!;
+                                statusText = 'TERTUNDA';
                             }
 
                             return Padding(
@@ -606,7 +611,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
-                                            job.status.replaceAll('_', ' ').toUpperCase(),
+                                            statusText,
                                             style: TextStyle(
                                               fontSize: 8,
                                               fontWeight: FontWeight.bold,
@@ -619,7 +624,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                     if (job.instructions != null && job.instructions!.trim().isNotEmpty) ...[
                                       const SizedBox(height: 6),
                                       Text(
-                                        'Instructions: ${job.instructions}',
+                                        'Instruksi: ${job.instructions}',
                                         style: TextStyle(fontSize: 11, color: Colors.grey[800], fontStyle: FontStyle.italic),
                                       ),
                                     ],
@@ -629,7 +634,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            'Due: ${DateFormat('d MMM y • HH:mm').format(job.dueDate)}',
+                                            'Tenggat: ${DateFormat('d MMM y • HH:mm', 'id').format(job.dueDate)}',
                                             style: TextStyle(fontSize: 10, color: Colors.red[800], fontWeight: FontWeight.bold),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -638,7 +643,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                         const SizedBox(width: 8),
                                         Flexible(
                                           child: Text(
-                                            'Labor: ${job.totalManDays.toStringAsFixed(2)} MD',
+                                            'Tenaga: ${job.totalManDays.toStringAsFixed(2)} MD',
                                             style: TextStyle(fontSize: 10, color: Colors.purple[800], fontWeight: FontWeight.bold),
                                             textAlign: TextAlign.end,
                                           ),
@@ -658,7 +663,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'Total Amount:',
+                                  'Jumlah Total:',
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
                                 ),
                               ),
@@ -687,11 +692,11 @@ class _ScheduleTabState extends State<ScheduleTab> {
 
     Widget buildDetailsPanel() {
       if (_selectedDay == null) {
-        return const Center(child: Text('Select a day to view reservations'));
+        return const Center(child: Text('Pilih hari untuk melihat reservasi'));
       }
 
       final dayRentals = _getRentalsForDay(_selectedDay!, rentalProvider.rentals);
-      final blockRentals = _getBlockRentalsForDay(_selectedDay!, rentalProvider.rentals);
+      final blockRentals = _getBlockRentalsForDay(_selectedDay!, rentalProvider.rentals, rentalProvider.dateLockingPeriod);
       final isOwner = Provider.of<AuthProvider>(context, listen: false).user?.isOwner ?? false;
 
       final bool hasAnyData = dayRentals.isNotEmpty || blockRentals.isNotEmpty;
@@ -707,7 +712,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                 Icon(Icons.event, size: 18, color: primaryColor),
                 const SizedBox(width: 8),
                 Text(
-                  'Active Bookings (${dayRentals.length})',
+                  'Pemesanan Aktif (${dayRentals.length})',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: primaryColor),
                 ),
               ],
@@ -732,7 +737,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                 Icon(Icons.block, size: 18, color: Colors.red[800]),
                 const SizedBox(width: 8),
                 Text(
-                  'Blocking / Buffer Periods (${blockRentals.length})',
+                  'Periode Blokir / Penyangga (${blockRentals.length})',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.red[800]),
                 ),
               ],
@@ -749,7 +754,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Reservations for ${DateFormat('EEEE, MMMM d, y').format(_selectedDay!)}',
+            'Reservasi untuk ${DateFormat('EEEE, d MMMM y', 'id').format(_selectedDay!)}',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
           ),
           const SizedBox(height: 16),
@@ -761,9 +766,9 @@ class _ScheduleTabState extends State<ScheduleTab> {
                       children: [
                         Icon(Icons.calendar_today_outlined, size: 48, color: Colors.grey[300]),
                         const SizedBox(height: 12),
-                        Text(
-                          'No reservations or block periods on this date',
-                          style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold),
+                        const Text(
+                          'Tidak ada reservasi atau periode blokir pada tanggal ini',
+                          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),

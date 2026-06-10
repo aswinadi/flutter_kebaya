@@ -43,12 +43,12 @@ class _MixMatchTabState extends State<MixMatchTab> {
     return (toDate.difference(fromDate).inHours / 24).round().abs();
   }
 
-  // Determine if a specific item is blocked on a given date (±14 days dead zone)
-  bool _isItemBlockedOnDate(int itemId, DateTime date, List<Rental> rentals) {
+  // Determine if a specific item is blocked on a given date (dead zone based on locking period)
+  bool _isItemBlockedOnDate(int itemId, DateTime date, List<Rental> rentals, int lockDays) {
     for (final rental in rentals) {
       if (rental.status == 'cancelled') continue;
       final diff = _daysBetween(rental.eventDate, date);
-      if (diff <= 14) {
+      if (diff <= lockDays) {
         for (final item in rental.items) {
           if (item.inventoryItemId == itemId) {
             return true;
@@ -146,7 +146,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
     // Build single item card
     Widget buildItemCard(InventoryItem item, bool isSelected, VoidCallback onTap) {
       final isBlocked = _filterDate != null &&
-          _isItemBlockedOnDate(item.id, _filterDate!, rentalProvider.rentals);
+          _isItemBlockedOnDate(item.id, _filterDate!, rentalProvider.rentals, rentalProvider.dateLockingPeriod);
       
       final api = ApiService();
 
@@ -215,7 +215,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                'Size ${item.size} • ${item.color}',
+                                'Ukuran ${item.size} • ${item.color}',
                                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -236,7 +236,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                                 ),
                               )
                             else
-                              const Text('Rate Hidden', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              const Text('Tarif Tersembunyi', style: TextStyle(fontSize: 11, color: Colors.grey)),
                             
                             // Availability badge
                             if (_filterDate != null)
@@ -247,7 +247,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isBlocked ? 'Reserved' : 'Available',
+                                  isBlocked ? 'Dipesan' : 'Tersedia',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -298,7 +298,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'OUTFIT PREVIEW',
+                        'PRATINJAU PAKAIAN',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0, color: Colors.grey),
                       ),
                       if (_selectedTop != null || _selectedBottom != null)
@@ -337,7 +337,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                                 Icon(Icons.style_outlined, color: primaryColor.withOpacity(0.3), size: 28),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Select Top',
+                                  'Pilih Atasan',
                                   style: TextStyle(fontSize: 11, color: primaryColor.withOpacity(0.5), fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -362,7 +362,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                                 Icon(Icons.layers_outlined, color: Colors.green[800]!.withOpacity(0.2), size: 28),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Select Bottom',
+                                  'Pilih Bawahan',
                                   style: TextStyle(fontSize: 11, color: Colors.green[800]!.withOpacity(0.4), fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -383,14 +383,14 @@ class _MixMatchTabState extends State<MixMatchTab> {
                             children: [
                               if (_selectedTop != null)
                                 Text(
-                                  'Top: ${_selectedTop!.name}',
+                                  'Atasan: ${_selectedTop!.name}',
                                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               if (_selectedBottom != null)
                                 Text(
-                                  'Bottom: ${_selectedBottom!.name}',
+                                  'Bawahan: ${_selectedBottom!.name}',
                                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -428,7 +428,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
     // Build the monthly calendar grid view
     Widget buildCalendarSection() {
       final days = _getMonthDays(_focusedMonth);
-      final weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+      final weekDays = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
 
       return Card(
         elevation: 2,
@@ -446,14 +446,23 @@ class _MixMatchTabState extends State<MixMatchTab> {
                   IconButton(
                     icon: const Icon(Icons.chevron_left),
                     onPressed: _prevMonth,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
-                  Text(
-                    DateFormat('MMMM yyyy').format(_focusedMonth),
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Text(
+                      DateFormat('MMMM yyyy', 'id').format(_focusedMonth),
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.chevron_right),
                     onPressed: _nextMonth,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -486,7 +495,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                 itemBuilder: (context, index) {
                   final day = days[index];
                   if (day == null) return const SizedBox.shrink();
-
+ 
                   final isToday = DateTime.now().year == day.year &&
                       DateTime.now().month == day.month &&
                       DateTime.now().day == day.day;
@@ -498,9 +507,9 @@ class _MixMatchTabState extends State<MixMatchTab> {
 
                   // Evaluate if selected top or bottom is blocked
                   final topBlocked = _selectedTop != null &&
-                      _isItemBlockedOnDate(_selectedTop!.id, day, rentalProvider.rentals);
+                      _isItemBlockedOnDate(_selectedTop!.id, day, rentalProvider.rentals, rentalProvider.dateLockingPeriod);
                   final bottomBlocked = _selectedBottom != null &&
-                      _isItemBlockedOnDate(_selectedBottom!.id, day, rentalProvider.rentals);
+                      _isItemBlockedOnDate(_selectedBottom!.id, day, rentalProvider.rentals, rentalProvider.dateLockingPeriod);
 
                   final isBlocked = topBlocked || bottomBlocked;
 
@@ -600,7 +609,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                     children: [
                       Container(width: 8, height: 8, decoration: BoxDecoration(color: Colors.orange[400], shape: BoxShape.circle)),
                       const SizedBox(width: 4),
-                      const Text('Top Blocked', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      const Text('Atasan', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     ],
                   ),
                   Row(
@@ -608,7 +617,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                     children: [
                       Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
                       const SizedBox(width: 4),
-                      const Text('Bottom Blocked', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      const Text('Bawahan', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     ],
                   ),
                   Row(
@@ -616,7 +625,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                     children: [
                       Container(width: 8, height: 8, decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle)),
                       const SizedBox(width: 4),
-                      const Text('Selected Filter', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      const Text('Filter', style: TextStyle(fontSize: 10, color: Colors.grey)),
                     ],
                   ),
                 ],
@@ -641,8 +650,8 @@ class _MixMatchTabState extends State<MixMatchTab> {
                 icon: const Icon(Icons.calendar_today_outlined, size: 18),
                 label: Text(
                   _filterDate == null
-                      ? 'Filter by Event Date'
-                      : 'Date: ${DateFormat('EEEE, MMM d, y').format(_filterDate!)}',
+                      ? 'Filter Berdasarkan Tanggal'
+                      : 'Tanggal: ${DateFormat('EEEE, d MMM y', 'id').format(_filterDate!)}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -673,7 +682,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.clear, color: Colors.redAccent),
-                tooltip: 'Clear Date Filter',
+                tooltip: 'Hapus Filter Tanggal',
                 onPressed: () => setState(() => _filterDate = null),
               ),
             ],
@@ -696,7 +705,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'TOPS (ATASAN)',
+                    'ATASAN (TOPS)',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -709,7 +718,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
             child: TextField(
               onChanged: (val) => setState(() => _searchTop = val),
               decoration: InputDecoration(
-                hintText: 'Search tops name/SKU/color...',
+                hintText: 'Cari nama/SKU/warna atasan...',
                 prefixIcon: const Icon(Icons.search, size: 18),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -718,7 +727,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
           ),
           Expanded(
             child: allTops.isEmpty
-                ? const Center(child: Text('No tops found', style: TextStyle(color: Colors.grey)))
+                ? const Center(child: Text('Atasan tidak ditemukan', style: TextStyle(color: Colors.grey)))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     itemCount: allTops.length,
@@ -750,7 +759,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'BOTTOMS (BAWAHAN)',
+                    'BAWAHAN (BOTTOMS)',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -763,7 +772,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
             child: TextField(
               onChanged: (val) => setState(() => _searchBottom = val),
               decoration: InputDecoration(
-                hintText: 'Search bottoms name/SKU/color...',
+                hintText: 'Cari nama/SKU/warna bawahan...',
                 prefixIcon: const Icon(Icons.search, size: 18),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -772,7 +781,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
           ),
           Expanded(
             child: allBottoms.isEmpty
-                ? const Center(child: Text('No bottoms found', style: TextStyle(color: Colors.grey)))
+                ? const Center(child: Text('Bawahan tidak ditemukan', style: TextStyle(color: Colors.grey)))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     itemCount: allBottoms.length,
@@ -795,7 +804,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Left Pane (25%): Tops & Bottoms Tabs
+          // Left Pane (30%): Tops & Bottoms Tabs
           Expanded(
             flex: 3,
             child: Container(
@@ -810,8 +819,8 @@ class _MixMatchTabState extends State<MixMatchTab> {
                       unselectedLabelColor: Colors.grey,
                       labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                       tabs: const [
-                        Tab(text: 'Tops'),
-                        Tab(text: 'Bottoms'),
+                        Tab(text: 'Atasan'),
+                        Tab(text: 'Bawahan'),
                       ],
                     ),
                     Expanded(
@@ -846,9 +855,9 @@ class _MixMatchTabState extends State<MixMatchTab> {
             ),
           ),
           const VerticalDivider(width: 1, thickness: 1),
-          // Right Pane (45%): Massive Mannequin Preview
+          // Right Pane (40%): Massive Mannequin Preview
           Expanded(
-            flex: 5,
+            flex: 4,
             child: Container(
               color: Colors.white,
               padding: const EdgeInsets.all(16.0),
@@ -886,7 +895,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'PREVIEW',
+                          'PRATINJAU',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 10,
@@ -912,7 +921,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
                                 ),
                                 const SizedBox(width: 3),
                                 Text(
-                                  _showCalendarMobile ? 'Preview' : 'Cal',
+                                  _showCalendarMobile ? 'Pratinjau' : 'Kalender',
                                   style: TextStyle(fontSize: 10, color: primaryColor, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -955,8 +964,8 @@ class _MixMatchTabState extends State<MixMatchTab> {
                       unselectedLabelColor: Colors.grey,
                       labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       tabs: const [
-                        Tab(text: 'Tops'),
-                        Tab(text: 'Bottoms'),
+                        Tab(text: 'Atasan'),
+                        Tab(text: 'Bawahan'),
                       ],
                     ),
                     Expanded(

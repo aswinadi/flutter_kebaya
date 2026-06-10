@@ -30,9 +30,10 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
   late TextEditingController _colorController;
   late TextEditingController _rateController;
   late TextEditingController _descController;
+  late TextEditingController _sizeController;
+  late TextEditingController _tagsController;
   
   String _selectedType = 'top';
-  String _selectedSize = 'M';
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
   bool _isSaving = false;
@@ -46,10 +47,11 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       text: widget.item?.rentalRate != null ? widget.item!.rentalRate!.toStringAsFixed(0) : '',
     );
     _descController = TextEditingController(text: widget.item?.description ?? '');
+    _sizeController = TextEditingController(text: widget.item?.size ?? 'M');
+    _tagsController = TextEditingController(text: widget.item?.tags.join(', ') ?? '');
     
     if (widget.item != null) {
       _selectedType = widget.item!.type;
-      _selectedSize = widget.item!.size;
     }
   }
 
@@ -62,8 +64,9 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       _colorController.text = widget.item?.color ?? '';
       _rateController.text = widget.item?.rentalRate != null ? widget.item!.rentalRate!.toStringAsFixed(0) : '';
       _descController.text = widget.item?.description ?? '';
+      _sizeController.text = widget.item?.size ?? 'M';
+      _tagsController.text = widget.item?.tags.join(', ') ?? '';
       _selectedType = widget.item?.type ?? 'top';
-      _selectedSize = widget.item?.size ?? 'M';
       _imageFile = null;
     }
   }
@@ -74,6 +77,8 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _colorController.dispose();
     _rateController.dispose();
     _descController.dispose();
+    _sizeController.dispose();
+    _tagsController.dispose();
     super.dispose();
   }
 
@@ -91,7 +96,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
+        SnackBar(content: Text('Gagal mengambil gambar: $e')),
       );
     }
   }
@@ -108,7 +113,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text('Take Photo with Camera'),
+                title: const Text('Ambil Foto dengan Kamera'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.camera);
@@ -116,7 +121,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose from Gallery'),
+                title: const Text('Pilih dari Galeri'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickImage(ImageSource.gallery);
@@ -139,10 +144,15 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     
     final name = _nameController.text.trim();
     final type = _selectedType;
-    final size = _selectedSize;
+    final size = _sizeController.text.trim();
     final color = _colorController.text.trim();
     final description = _descController.text.trim();
     final rentalRate = isOwner ? double.tryParse(_rateController.text.trim()) : null;
+    final tags = _tagsController.text
+        .split(',')
+        .map((t) => t.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
 
     bool success = false;
     
@@ -156,6 +166,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         description: description,
         rentalRate: rentalRate,
         imageFile: _imageFile,
+        tags: tags,
       );
     } else {
       // Update existing
@@ -168,6 +179,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         description: description,
         rentalRate: rentalRate,
         imageFile: _imageFile,
+        tags: tags,
       );
     }
 
@@ -177,8 +189,8 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(widget.item == null
-              ? 'Inventory item created successfully!'
-              : 'Inventory item updated successfully!'),
+              ? 'Komponen gown berhasil dibuat!'
+              : 'Komponen gown berhasil diperbarui!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -191,7 +203,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(provider.error ?? 'Failed to save item'),
+          content: Text(provider.error ?? 'Gagal menyimpan item'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -204,14 +216,14 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Inventory Item?'),
-        content: Text('Are you sure you want to delete ${widget.item!.name}? This cannot be undone.'),
+        title: const Text('Hapus Komponen Gown?'),
+        content: Text('Apakah Anda yakin ingin menghapus ${widget.item!.name}? Tindakan ini tidak dapat dibatalkan.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -225,7 +237,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item deleted successfully'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Item berhasil dihapus'), backgroundColor: Colors.green),
       );
       if (widget.onSaved != null) {
         widget.onSaved!();
@@ -236,7 +248,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     } else {
       final err = Provider.of<InventoryProvider>(context, listen: false).error;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err ?? 'Failed to delete item'), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text(err ?? 'Gagal menghapus item'), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -286,7 +298,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                 Icon(Icons.add_a_photo_outlined, size: 40, color: primaryColor),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Tap to add or capture gown photo',
+                                  'Ketuk untuk menambahkan atau mengambil foto gown',
                                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                 ),
                               ],
@@ -313,7 +325,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'SKU (Auto)',
+                            'SKU (Otomatis)',
                             style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
                           ),
                           const SizedBox(height: 6),
@@ -338,19 +350,19 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                     child: TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Gown Component Name',
-                        hintText: 'e.g., Premium Velvet Kebaya',
+                        labelText: 'Nama Komponen Gown',
+                        hintText: 'Misal: Kebaya Velvet Premium',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       validator: (value) =>
-                          value == null || value.trim().isEmpty ? 'Name is required' : null,
+                          value == null || value.trim().isEmpty ? 'Nama wajib diisi' : null,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // Type & Size dropdowns side by side
+              // Type & Size inputs side by side
               Row(
                 children: [
                   Expanded(
@@ -358,29 +370,27 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                       value: _selectedType,
                       isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: 'Garment Category',
+                        labelText: 'Kategori Garmen',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'top', child: Text('Top (Atasan)')),
-                        DropdownMenuItem(value: 'bottom', child: Text('Bottom (Bawahan)')),
+                        DropdownMenuItem(value: 'top', child: Text('Atasan (Top)')),
+                        DropdownMenuItem(value: 'bottom', child: Text('Bawahan (Bottom)')),
                       ],
                       onChanged: (value) => setState(() => _selectedType = value!),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedSize,
-                      isExpanded: true,
+                    child: TextFormField(
+                      controller: _sizeController,
                       decoration: InputDecoration(
-                        labelText: 'Size',
+                        labelText: 'Ukuran Gown',
+                        hintText: 'Misal: S, M, L, Custom, P: 100',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      items: const ['S', 'M', 'L', 'XL', 'XXL', 'Custom']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                          .toList(),
-                      onChanged: (value) => setState(() => _selectedSize = value!),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty ? 'Ukuran wajib diisi' : null,
                     ),
                   ),
                 ],
@@ -394,12 +404,12 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                     child: TextFormField(
                       controller: _colorController,
                       decoration: InputDecoration(
-                        labelText: 'Fabric Color',
-                        hintText: 'e.g., Emerald Green',
+                        labelText: 'Warna Kain',
+                        hintText: 'Misal: Hijau Zamrud',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       validator: (value) =>
-                          value == null || value.trim().isEmpty ? 'Color is required' : null,
+                          value == null || value.trim().isEmpty ? 'Warna wajib diisi' : null,
                     ),
                   ),
                   if (isOwner) ...[
@@ -409,16 +419,27 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                         controller: _rateController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Rental Rate (Rp)',
+                          labelText: 'Tarif Sewa (Rp)',
                           prefixText: 'Rp ',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (value) =>
-                            value == null || value.trim().isEmpty ? 'Rate is required' : null,
+                            value == null || value.trim().isEmpty ? 'Tarif sewa wajib diisi' : null,
                       ),
                     ),
                   ],
                 ],
+              ),
+              const SizedBox(height: 20),
+
+              // Tags
+              TextFormField(
+                controller: _tagsController,
+                decoration: InputDecoration(
+                  labelText: 'Tag / Kata Kunci (Dipisahkan koma)',
+                  hintText: 'Misal: modern, premium, satin, batik',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -427,8 +448,8 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                 controller: _descController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  labelText: 'Item Description & Permak Limits',
-                  hintText: 'Describe details, lace work, beading style, sizing limits...',
+                  labelText: 'Deskripsi Item & Batasan Permak',
+                  hintText: 'Jelaskan detail, renda, payet, batas ukuran...',
                   alignLabelWithHint: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -442,7 +463,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                     IconButton(
                       onPressed: _isSaving ? null : _deleteItem,
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      tooltip: 'Delete Gown',
+                      tooltip: 'Hapus Gown',
                     ),
                     const SizedBox(width: 16),
                   ],
@@ -463,7 +484,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : Text(
-                              widget.item == null ? 'Add to Catalog' : 'Update Item Details',
+                              widget.item == null ? 'Tambah ke Katalog' : 'Perbarui Detail Item',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                     ),
@@ -484,7 +505,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         child: Column(
           children: [
             AppBar(
-              title: Text(widget.item == null ? 'Create Gown Component' : 'Edit: ${widget.item!.name}'),
+              title: Text(widget.item == null ? 'Buat Komponen Gown' : 'Ubah: ${widget.item!.name}'),
               automaticallyImplyLeading: false,
               backgroundColor: Colors.white,
               foregroundColor: Colors.black87,
@@ -505,7 +526,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.item == null ? 'Add Gown to Catalog' : 'Edit Gown Components'),
+        title: Text(widget.item == null ? 'Tambah Gown ke Katalog' : 'Ubah Komponen Gown'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0.5,

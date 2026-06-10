@@ -8,7 +8,7 @@ import '../models/rental.dart';
 import '../models/job_order.dart';
 
 class ApiService {
-  String baseUrl = 'https://biogeographic-raylan-interdentally.ngrok-free.dev'; // Default development Ngrok host
+  String baseUrl = 'https://gown.maxmar.net/filament_kebaya/public'; // Production Hostinger URL
   String? token;
   User? currentUser;
 
@@ -149,6 +149,37 @@ class ApiService {
     }
   }
 
+  Future<User> updateUser(
+    int id, {
+    required String name,
+    required String username,
+    required String email,
+    String? password,
+    required List<String> roles,
+  }) async {
+    final body = {
+      'name': name,
+      'username': username,
+      'email': email,
+      if (password != null && password.isNotEmpty) 'password': password,
+      'roles': roles,
+    };
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/users/$id'),
+      headers: _getHeaders(),
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return User.fromJson(data['user']);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? error['errors']?.toString() ?? 'Failed to update user');
+    }
+  }
+
   Future<List<String>> getRoles() async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/roles'),
@@ -160,6 +191,34 @@ class ApiService {
       return raw.map((item) => item.toString()).toList();
     } else {
       throw Exception('Failed to fetch roles');
+    }
+  }
+
+  Future<Map<String, dynamic>> getSettings() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/settings'),
+      headers: _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load settings');
+    }
+  }
+
+  Future<void> updateDateLockingPeriod(int days) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/settings'),
+      headers: _getHeaders(),
+      body: jsonEncode({
+        'date_locking_period': days,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to update settings');
     }
   }
 
@@ -187,6 +246,7 @@ class ApiService {
     required String description,
     double? rentalRate,
     File? imageFile,
+    List<String>? tags,
   }) async {
     var uri = Uri.parse('$baseUrl/api/inventory');
     var request = http.MultipartRequest('POST', uri);
@@ -202,6 +262,11 @@ class ApiService {
     request.fields['description'] = description;
     if (rentalRate != null) {
       request.fields['rental_rate'] = rentalRate.toString();
+    }
+    if (tags != null) {
+      for (int i = 0; i < tags.length; i++) {
+        request.fields['tags[$i]'] = tags[i];
+      }
     }
 
     if (imageFile != null) {
@@ -235,6 +300,7 @@ class ApiService {
     required String description,
     double? rentalRate,
     File? imageFile,
+    List<String>? tags,
   }) async {
     // Standard multipart PUT requests sometimes parse incorrectly in PHP/Laravel.
     // So we POST to the endpoint with the original URL because routes/api.php is set to POST /inventory/{id}
@@ -252,6 +318,11 @@ class ApiService {
     request.fields['description'] = description;
     if (rentalRate != null) {
       request.fields['rental_rate'] = rentalRate.toString();
+    }
+    if (tags != null) {
+      for (int i = 0; i < tags.length; i++) {
+        request.fields['tags[$i]'] = tags[i];
+      }
     }
 
     if (imageFile != null) {
@@ -311,7 +382,7 @@ class ApiService {
     required String status,
     String? groupOrderName,
     required List<Map<String, dynamic>> items,
-    File? clientPicFile,
+    List<File>? clientPicFiles,
     List<File>? beforePhotos,
   }) async {
     var uri = Uri.parse('$baseUrl/api/rentals');
@@ -335,14 +406,16 @@ class ApiService {
       }
     }
 
-    if (clientPicFile != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'client_pic',
-          clientPicFile.path,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
+    if (clientPicFiles != null) {
+      for (var file in clientPicFiles) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'client_pic[]',
+            file.path,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+      }
     }
 
     if (beforePhotos != null) {
@@ -377,7 +450,7 @@ class ApiService {
     DateTime? eventDate,
     String? groupOrderName,
     String? notes,
-    File? clientPicFile,
+    List<File>? clientPicFiles,
     List<File>? beforePhotos,
     List<File>? afterPhotos,
   }) async {
@@ -396,14 +469,16 @@ class ApiService {
     if (groupOrderName != null) request.fields['group_order_name'] = groupOrderName;
     if (notes != null) request.fields['notes'] = notes;
 
-    if (clientPicFile != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'client_pic',
-          clientPicFile.path,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
+    if (clientPicFiles != null) {
+      for (var file in clientPicFiles) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'client_pic[]',
+            file.path,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+      }
     }
 
     if (beforePhotos != null) {

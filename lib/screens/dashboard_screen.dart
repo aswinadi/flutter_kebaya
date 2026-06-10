@@ -7,7 +7,6 @@ import 'inventory_tab.dart';
 import 'checkout_tab.dart';
 import 'job_order_tab.dart';
 import 'schedule_tab.dart';
-import 'schedule_tab.dart';
 import 'mix_match_tab.dart';
 import 'employee_tab.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -64,12 +63,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
 
     final List<String> titles = [
-      'Product Catalogue & Inventory',
-      'Catalogue Mix & Match',
-      'POS Mix-and-Match Checkout',
-      'Production & Alteration Jobs',
-      'Reservation Schedule Calendar',
-      if (user?.isOwner == true) 'Employee Management',
+      'Katalog Produk & Inventaris',
+      'Padu Padan Katalog',
+      'Kasir Padu Padan POS',
+      'Pekerjaan Produksi & Permak',
+      'Kalender Jadwal Reservasi',
+      if (user?.isOwner == true) 'Manajemen Karyawan',
     ];
 
     if (_selectedIndex >= tabs.length) {
@@ -79,12 +78,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Widget buildAppBar() {
       final displayTitle = isMobile
           ? [
-              'Inventory',
-              'Mix & Match',
-              'POS Checkout',
-              'Job Orders',
-              'Schedule',
-              if (user?.isOwner == true) 'Employees',
+              'Inventaris',
+              'Padu Padan',
+              'Kasir',
+              'Pekerjaan',
+              'Jadwal',
+              if (user?.isOwner == true) 'Karyawan',
             ][_selectedIndex]
           : titles[_selectedIndex];
 
@@ -111,7 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: Tooltip(
-                message: '${user?.name} (${user?.isOwner == true ? 'Owner' : 'Worker'})',
+                message: '${user?.name} (${user?.isOwner == true ? 'Pemilik' : 'Karyawan'})',
                 child: GestureDetector(
                   onTap: () {
                     showDialog(
@@ -148,7 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 label: Text(
-                  '${user?.name} (${user?.isOwner == true ? 'Owner' : 'Worker'})',
+                  '${user?.name} (${user?.isOwner == true ? 'Pemilik' : 'Karyawan'})',
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 ),
                 backgroundColor: Colors.purple[50],
@@ -156,7 +155,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           IconButton(
             icon: const Icon(Icons.logout_outlined, color: Colors.redAccent),
-            tooltip: 'Logout',
+            tooltip: 'Keluar',
             onPressed: _onLogout,
           ),
         ],
@@ -179,33 +178,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const BottomNavigationBarItem(
               icon: Icon(Icons.inventory_2_outlined),
               activeIcon: Icon(Icons.inventory_2),
-              label: 'Inventory',
+              label: 'Inventaris',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.style_outlined),
               activeIcon: Icon(Icons.style),
-              label: 'Mix & Match',
+              label: 'Padu Padan',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.shopping_cart_checkout_outlined),
               activeIcon: Icon(Icons.shopping_cart_checkout),
-              label: 'Checkout',
+              label: 'Kasir',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.calendar_month_outlined),
               activeIcon: Icon(Icons.calendar_month),
-              label: 'Job Orders',
+              label: 'Pekerjaan',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.date_range_outlined),
               activeIcon: Icon(Icons.date_range),
-              label: 'Schedule',
+              label: 'Jadwal',
             ),
             if (user?.isOwner == true)
               const BottomNavigationBarItem(
                 icon: Icon(Icons.people_outline),
                 activeIcon: Icon(Icons.people),
-                label: 'Employees',
+                label: 'Karyawan',
               ),
           ],
         ),
@@ -250,7 +249,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         IconButton(
                           icon: const Icon(Icons.power_settings_new_outlined, color: Colors.redAccent, size: 28),
-                          tooltip: 'Logout',
+                          tooltip: 'Keluar',
                           onPressed: _onLogout,
                         ),
                       ],
@@ -262,33 +261,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const NavigationRailDestination(
                   icon: Icon(Icons.inventory_2_outlined),
                   selectedIcon: Icon(Icons.inventory_2),
-                  label: Text('Inventory'),
+                  label: Text('Inventaris'),
                 ),
                 const NavigationRailDestination(
                   icon: Icon(Icons.style_outlined),
                   selectedIcon: Icon(Icons.style),
-                  label: Text('Mix & Match'),
+                  label: Text('Padu Padan'),
                 ),
                 const NavigationRailDestination(
                   icon: Icon(Icons.shopping_cart_checkout_outlined),
                   selectedIcon: Icon(Icons.shopping_cart_checkout),
-                  label: Text('Checkout'),
+                  label: Text('Kasir'),
                 ),
                 const NavigationRailDestination(
                   icon: Icon(Icons.calendar_month_outlined),
                   selectedIcon: Icon(Icons.calendar_month),
-                  label: Text('Job Orders'),
+                  label: Text('Pekerjaan'),
                 ),
                 const NavigationRailDestination(
                   icon: Icon(Icons.date_range_outlined),
                   selectedIcon: Icon(Icons.date_range),
-                  label: Text('Schedule'),
+                  label: Text('Jadwal'),
                 ),
                 if (user?.isOwner == true)
                   const NavigationRailDestination(
                     icon: Icon(Icons.people_outline),
                     selectedIcon: Icon(Icons.people),
-                    label: Text('Employees'),
+                    label: Text('Karyawan'),
                   ),
               ],
             ),
