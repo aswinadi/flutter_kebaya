@@ -223,11 +223,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // Tablet/Desktop layout: side navigation rail
     Widget tabletLayout() {
+      final List<SidebarDestination> sidebarDestinations = [
+        SidebarDestination(
+          icon: Icons.inventory_2_outlined,
+          selectedIcon: Icons.inventory_2,
+          label: 'Inventaris',
+          index: 0,
+        ),
+        SidebarDestination(
+          icon: Icons.style_outlined,
+          selectedIcon: Icons.style,
+          label: 'Padu Padan',
+          index: 1,
+        ),
+        SidebarDestination(
+          icon: Icons.shopping_cart_checkout_outlined,
+          selectedIcon: Icons.shopping_cart_checkout,
+          label: 'Kasir',
+          index: 2,
+        ),
+        SidebarDestination(
+          icon: Icons.calendar_month_outlined,
+          selectedIcon: Icons.calendar_month,
+          label: 'Pekerjaan',
+          index: 3,
+        ),
+        SidebarDestination(
+          icon: Icons.date_range_outlined,
+          selectedIcon: Icons.date_range,
+          label: 'Jadwal',
+          index: 4,
+        ),
+        if (user?.isOwner == true)
+          SidebarDestination(
+            icon: Icons.people_outline,
+            selectedIcon: Icons.people,
+            label: 'Karyawan',
+            index: 5,
+          ),
+        if (user?.isOwner == true)
+          SidebarDestination(
+            icon: Icons.settings_outlined,
+            selectedIcon: Icons.settings,
+            label: 'Pengaturan',
+            index: 6,
+          ),
+      ];
+
       return Scaffold(
         body: Row(
           children: [
             Container(
-              width: 80,
+              width: 84,
               color: Colors.white,
               child: Column(
                 children: [
@@ -244,57 +291,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Destinations (Scrollable)
                   Expanded(
                     child: SingleChildScrollView(
-                      child: SizedBox(
-                        width: 80,
-                        child: NavigationRail(
-                          selectedIndex: _selectedIndex,
-                          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-                          labelType: NavigationRailLabelType.all,
-                          selectedIconTheme: IconThemeData(color: primaryColor),
-                          selectedLabelTextStyle: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
-                          unselectedIconTheme: const IconThemeData(color: Colors.black54),
-                          unselectedLabelTextStyle: const TextStyle(color: Colors.black54, fontSize: 11),
-                          backgroundColor: Colors.white,
-                          destinations: [
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.inventory_2_outlined),
-                              selectedIcon: Icon(Icons.inventory_2),
-                              label: Text('Inventaris'),
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: Column(
+                        children: sidebarDestinations.map((dest) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: SidebarItem(
+                              icon: dest.icon,
+                              selectedIcon: dest.selectedIcon,
+                              label: dest.label,
+                              isSelected: _selectedIndex == dest.index,
+                              onTap: () => setState(() => _selectedIndex = dest.index),
                             ),
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.style_outlined),
-                              selectedIcon: Icon(Icons.style),
-                              label: Text('Padu Padan'),
-                            ),
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.shopping_cart_checkout_outlined),
-                              selectedIcon: Icon(Icons.shopping_cart_checkout),
-                              label: Text('Kasir'),
-                            ),
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.calendar_month_outlined),
-                              selectedIcon: Icon(Icons.calendar_month),
-                              label: Text('Pekerjaan'),
-                            ),
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.date_range_outlined),
-                              selectedIcon: Icon(Icons.date_range),
-                              label: Text('Jadwal'),
-                            ),
-                            if (user?.isOwner == true)
-                              const NavigationRailDestination(
-                                icon: Icon(Icons.people_outline),
-                                selectedIcon: Icon(Icons.people),
-                                label: Text('Karyawan'),
-                              ),
-                            if (user?.isOwner == true)
-                              const NavigationRailDestination(
-                                icon: Icon(Icons.settings_outlined),
-                                selectedIcon: Icon(Icons.settings),
-                                label: Text('Pengaturan'),
-                              ),
-                          ],
-                        ),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ),
@@ -340,6 +350,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: ResponsiveLayout(
         mobileBody: mobileLayout(),
         tabletBody: tabletLayout(),
+      ),
+    );
+  }
+}
+
+class SidebarDestination {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final int index;
+
+  SidebarDestination({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.index,
+  });
+}
+
+class SidebarItem extends StatelessWidget {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const SidebarItem({
+    Key? key,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Colors.purple[900]!;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : icon,
+              color: isSelected ? primaryColor : Colors.black54,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? primaryColor : Colors.black54,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 10.5,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
