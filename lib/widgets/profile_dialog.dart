@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/rental_provider.dart';
 import '../services/api_service.dart';
 
 class ProfileDialog extends StatefulWidget {
@@ -16,7 +15,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _lockPeriodController = TextEditingController();
 
   bool _isLoading = false;
   bool _obscureCurrent = true;
@@ -24,20 +22,10 @@ class _ProfileDialogState extends State<ProfileDialog> {
   bool _obscureConfirm = true;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
-      _lockPeriodController.text = rentalProvider.dateLockingPeriod.toString();
-    });
-  }
-
-  @override
   void dispose() {
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
-    _lockPeriodController.dispose();
     super.dispose();
   }
 
@@ -226,60 +214,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
                       : const Text('Perbarui Kata Sandi'),
                 ),
               ),
-              if (user?.isOwner == true) ...[
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 16),
-                const Text(
-                  'Pengaturan Sistem',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _lockPeriodController,
-                  decoration: const InputDecoration(
-                    labelText: 'Durasi Kunci Tanggal Reservasi (Hari)',
-                    border: OutlineInputBorder(),
-                    helperText: 'Default: 7 hari. Menentukan batas aman pemesanan ganda.',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 44,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.settings, size: 18),
-                    label: const Text('Simpan Pengaturan'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple[800],
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () async {
-                      final val = int.tryParse(_lockPeriodController.text);
-                      if (val == null || val < 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Masukkan angka hari yang valid')),
-                        );
-                        return;
-                      }
-                      final success = await Provider.of<RentalProvider>(context, listen: false)
-                          .updateDateLockingPeriod(val);
-                      if (mounted) {
-                        if (success) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pengaturan berhasil diperbarui')),
-                          );
-                        } else {
-                          final err = Provider.of<RentalProvider>(context, listen: false).error;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Gagal memperbarui: $err'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
-              ],
             ],
           ),
         ),

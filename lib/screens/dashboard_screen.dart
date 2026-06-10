@@ -9,6 +9,7 @@ import 'job_order_tab.dart';
 import 'schedule_tab.dart';
 import 'mix_match_tab.dart';
 import 'employee_tab.dart';
+import 'settings_tab.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/profile_dialog.dart';
 
@@ -60,6 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const JobOrderTab(),
       const ScheduleTab(),
       if (user?.isOwner == true) const EmployeeTab(),
+      if (user?.isOwner == true) const SettingsTab(),
     ];
 
     final List<String> titles = [
@@ -69,6 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Pekerjaan Produksi & Permak',
       'Kalender Jadwal Reservasi',
       if (user?.isOwner == true) 'Manajemen Karyawan',
+      if (user?.isOwner == true) 'Pengaturan Sistem',
     ];
 
     if (_selectedIndex >= tabs.length) {
@@ -84,6 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               'Pekerjaan',
               'Jadwal',
               if (user?.isOwner == true) 'Karyawan',
+              if (user?.isOwner == true) 'Pengaturan',
             ][_selectedIndex]
           : titles[_selectedIndex];
 
@@ -206,6 +210,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 activeIcon: Icon(Icons.people),
                 label: 'Karyawan',
               ),
+            if (user?.isOwner == true)
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined),
+                activeIcon: Icon(Icons.settings),
+                label: 'Pengaturan',
+              ),
           ],
         ),
       );
@@ -288,6 +298,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icon(Icons.people_outline),
                     selectedIcon: Icon(Icons.people),
                     label: Text('Karyawan'),
+                  ),
+                if (user?.isOwner == true)
+                  const NavigationRailDestination(
+                    icon: Icon(Icons.settings_outlined),
+                    selectedIcon: Icon(Icons.settings),
+                    label: Text('Pengaturan'),
                   ),
               ],
             ),
