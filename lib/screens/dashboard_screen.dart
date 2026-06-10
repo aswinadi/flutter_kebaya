@@ -226,97 +226,101 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return Scaffold(
         body: Row(
           children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: NavigationRail(
-                        selectedIndex: _selectedIndex,
-                        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-                        labelType: NavigationRailLabelType.all,
-                        selectedIconTheme: IconThemeData(color: primaryColor),
-                        selectedLabelTextStyle: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
-                        unselectedIconTheme: const IconThemeData(color: Colors.black54),
-                        unselectedLabelTextStyle: const TextStyle(color: Colors.black54),
-                        backgroundColor: Colors.white,
-                        elevation: 4,
-                        leading: Padding(
-                          padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-                          child: CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Colors.purple[50],
-                            child: Icon(Icons.auto_awesome_mosaic_outlined, color: primaryColor, size: 24),
-                          ),
-                        ),
-                        trailing: Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_appVersion.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 8.0),
-                                      child: Text('v$_appVersion', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                    ),
-                                  IconButton(
-                                    icon: const Icon(Icons.power_settings_new_outlined, color: Colors.redAccent, size: 24),
-                                    tooltip: 'Keluar',
-                                    onPressed: _onLogout,
-                                  ),
-                                ],
+            Container(
+              width: 80,
+              color: Colors.white,
+              child: Column(
+                children: [
+                  // Leading (Avatar)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.purple[50],
+                      child: Icon(Icons.auto_awesome_mosaic_outlined, color: primaryColor, size: 24),
+                    ),
+                  ),
+                  
+                  // Destinations (Scrollable)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: SizedBox(
+                        width: 80,
+                        child: NavigationRail(
+                          selectedIndex: _selectedIndex,
+                          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+                          labelType: NavigationRailLabelType.all,
+                          selectedIconTheme: IconThemeData(color: primaryColor),
+                          selectedLabelTextStyle: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
+                          unselectedIconTheme: const IconThemeData(color: Colors.black54),
+                          unselectedLabelTextStyle: const TextStyle(color: Colors.black54, fontSize: 11),
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                          destinations: [
+                            const NavigationRailDestination(
+                              icon: Icon(Icons.inventory_2_outlined),
+                              selectedIcon: Icon(Icons.inventory_2),
+                              label: Text('Inventaris'),
+                            ),
+                            const NavigationRailDestination(
+                              icon: Icon(Icons.style_outlined),
+                              selectedIcon: Icon(Icons.style),
+                              label: Text('Padu Padan'),
+                            ),
+                            const NavigationRailDestination(
+                              icon: Icon(Icons.shopping_cart_checkout_outlined),
+                              selectedIcon: Icon(Icons.shopping_cart_checkout),
+                              label: Text('Kasir'),
+                            ),
+                            const NavigationRailDestination(
+                              icon: Icon(Icons.calendar_month_outlined),
+                              selectedIcon: Icon(Icons.calendar_month),
+                              label: Text('Pekerjaan'),
+                            ),
+                            const NavigationRailDestination(
+                              icon: Icon(Icons.date_range_outlined),
+                              selectedIcon: Icon(Icons.date_range),
+                              label: Text('Jadwal'),
+                            ),
+                            if (user?.isOwner == true)
+                              const NavigationRailDestination(
+                                icon: Icon(Icons.people_outline),
+                                selectedIcon: Icon(Icons.people),
+                                label: Text('Karyawan'),
                               ),
-                            ),
-                          ),
+                            if (user?.isOwner == true)
+                              const NavigationRailDestination(
+                                icon: Icon(Icons.settings_outlined),
+                                selectedIcon: Icon(Icons.settings),
+                                label: Text('Pengaturan'),
+                              ),
+                          ],
                         ),
-                        destinations: [
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.inventory_2_outlined),
-                            selectedIcon: Icon(Icons.inventory_2),
-                            label: Text('Inventaris'),
-                          ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.style_outlined),
-                            selectedIcon: Icon(Icons.style),
-                            label: Text('Padu Padan'),
-                          ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.shopping_cart_checkout_outlined),
-                            selectedIcon: Icon(Icons.shopping_cart_checkout),
-                            label: Text('Kasir'),
-                          ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.calendar_month_outlined),
-                            selectedIcon: Icon(Icons.calendar_month),
-                            label: Text('Pekerjaan'),
-                          ),
-                          const NavigationRailDestination(
-                            icon: Icon(Icons.date_range_outlined),
-                            selectedIcon: Icon(Icons.date_range),
-                            label: Text('Jadwal'),
-                          ),
-                          if (user?.isOwner == true)
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.people_outline),
-                              selectedIcon: Icon(Icons.people),
-                              label: Text('Karyawan'),
-                            ),
-                          if (user?.isOwner == true)
-                            const NavigationRailDestination(
-                              icon: Icon(Icons.settings_outlined),
-                              selectedIcon: Icon(Icons.settings),
-                              label: Text('Pengaturan'),
-                            ),
-                        ],
                       ),
                     ),
                   ),
-                );
-              },
+                  
+                  // Trailing (Version & Logout)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24.0, top: 16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_appVersion.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Text('v$_appVersion', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.power_settings_new_outlined, color: Colors.redAccent, size: 24),
+                          tooltip: 'Keluar',
+                          onPressed: _onLogout,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
