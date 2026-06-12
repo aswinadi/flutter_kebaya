@@ -26,7 +26,7 @@ if ($versionLine) {
     
     # Build APK
     Write-Host "Building Flutter APK..." -ForegroundColor Cyan
-    flutter build apk
+    flutter build apk -t lib/main_prod.dart
     
     Write-Host "Done! APK built with version $newVersion" -ForegroundColor Green
     Write-Host "You can find it in build\app\outputs\flutter-apk\app-release.apk" -ForegroundColor Yellow
