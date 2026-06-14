@@ -13,6 +13,7 @@ import 'package:flutter_kebaya/models/user.dart';
 import 'package:flutter_kebaya/models/inventory_item.dart';
 import 'package:flutter_kebaya/screens/schedule_tab.dart';
 import 'package:flutter_kebaya/screens/mix_match_tab.dart';
+import 'package:flutter_kebaya/screens/home_tab.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 class MockAuthProvider extends AuthProvider {
@@ -195,5 +196,46 @@ void main() {
 
     // Verify total price is displayed (for owner user)
     expect(find.text('Rp 250.000'), findsOneWidget);
+  });
+
+  testWidgets('HomeTab render and navigation callback test', (WidgetTester tester) async {
+    final testUser = User(id: 1, name: 'Caroline Lauda', email: 'owner@lauda.com', roles: ['owner']);
+    int navigatedIndex = -1;
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: MockAuthProvider(testUser)),
+          ChangeNotifierProvider<RentalProvider>.value(value: MockRentalProvider([])),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: HomeTab(
+              onNavigate: (index) {
+                navigatedIndex = index;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify greeting and basic items
+    expect(find.text('Selamat Datang,'), findsOneWidget);
+    expect(find.text('Caroline Lauda'), findsOneWidget);
+    expect(find.text('Pemilik Toko'), findsOneWidget);
+    expect(find.text('Kasir POS'), findsOneWidget);
+    expect(find.text('Padu Padan'), findsOneWidget);
+    expect(find.text('Katalog & Stok'), findsOneWidget);
+    expect(find.text('Tugas Tailor'), findsOneWidget);
+    expect(find.text('Karyawan'), findsOneWidget);
+
+    // Tap 'Kasir POS' and verify callback
+    await tester.tap(find.text('Kasir POS'));
+    await tester.pumpAndSettle();
+
+    expect(navigatedIndex, 4);
   });
 }

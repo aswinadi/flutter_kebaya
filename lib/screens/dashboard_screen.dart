@@ -11,6 +11,7 @@ import 'mix_match_tab.dart';
 import 'employee_tab.dart';
 import 'settings_tab.dart';
 import 'rentals_tab.dart';
+import 'home_tab.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/profile_dialog.dart';
 
@@ -56,25 +57,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isMobile = ResponsiveLayout.isMobile(context);
 
     final List<Widget> tabs = [
-      const InventoryTab(),
-      const MixMatchTab(),
-      const CheckoutTab(),
+      HomeTab(onNavigate: (index) => setState(() => _selectedIndex = index)),
       const RentalsTab(),
-      const JobOrderTab(),
       const ScheduleTab(),
-      if (user?.isOwner == true) const EmployeeTab(),
-      if (user?.isOwner == true) const SettingsTab(),
+      const SettingsTab(),
+      const CheckoutTab(),
+      const MixMatchTab(),
+      const InventoryTab(),
+      const JobOrderTab(),
+      const EmployeeTab(),
     ];
 
     final List<String> titles = [
-      'Katalog Produk & Inventaris',
-      'Padu Padan Katalog',
-      'Kasir Padu Padan POS',
+      'Beranda Toko',
       'Daftar Transaksi Penyewaan',
-      'Pekerjaan Produksi & Permak',
       'Kalender Jadwal Reservasi',
-      if (user?.isOwner == true) 'Manajemen Karyawan',
-      if (user?.isOwner == true) 'Pengaturan Sistem',
+      'Pengaturan Sistem',
+      'Kasir Padu Padan POS',
+      'Padu Padan Katalog',
+      'Katalog Produk & Inventaris',
+      'Pekerjaan Produksi & Permak',
+      'Manajemen Karyawan',
     ];
 
     if (_selectedIndex >= tabs.length) {
@@ -82,20 +85,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     Widget buildAppBar() {
-      final displayTitle = isMobile
-          ? [
-              'Inventaris',
-              'Padu Padan',
-              'Kasir',
-              'Transaksi',
-              'Pekerjaan',
-              'Jadwal',
-              if (user?.isOwner == true) 'Karyawan',
-              if (user?.isOwner == true) 'Pengaturan',
-            ][_selectedIndex]
-          : titles[_selectedIndex];
+      final List<String> mobileTitles = [
+        'Beranda',
+        'Transaksi',
+        'Jadwal',
+        'Pengaturan',
+        'Kasir',
+        'Padu Padan',
+        'Inventaris',
+        'Pekerjaan',
+        'Karyawan',
+      ];
+      final displayTitle = isMobile ? mobileTitles[_selectedIndex] : titles[_selectedIndex];
 
       return AppBar(
+        leading: _selectedIndex > 3
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _selectedIndex = 0),
+              )
+            : null,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -176,55 +185,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         appBar: buildAppBar() as PreferredSizeWidget?,
         body: tabs[_selectedIndex],
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
+          currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
           onTap: (index) => setState(() => _selectedIndex = index),
           selectedItemColor: primaryColor,
           unselectedItemColor: Colors.grey[500],
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
           type: BottomNavigationBarType.fixed,
-          items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.inventory_2_outlined),
-              activeIcon: Icon(Icons.inventory_2),
-              label: 'Inventaris',
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Beranda',
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.style_outlined),
-              activeIcon: Icon(Icons.style),
-              label: 'Padu Padan',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_checkout_outlined),
-              activeIcon: Icon(Icons.shopping_cart_checkout),
-              label: 'Kasir',
-            ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.receipt_long_outlined),
               activeIcon: Icon(Icons.receipt_long),
               label: 'Transaksi',
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.calendar_month_outlined),
               activeIcon: Icon(Icons.calendar_month),
-              label: 'Pekerjaan',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.date_range_outlined),
-              activeIcon: Icon(Icons.date_range),
               label: 'Jadwal',
             ),
-            if (user?.isOwner == true)
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.people_outline),
-                activeIcon: Icon(Icons.people),
-                label: 'Karyawan',
-              ),
-            if (user?.isOwner == true)
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.settings_outlined),
-                activeIcon: Icon(Icons.settings),
-                label: 'Pengaturan',
-              ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: 'Pengaturan',
+            ),
           ],
         ),
       );
@@ -234,55 +221,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Widget tabletLayout() {
       final List<SidebarDestination> sidebarDestinations = [
         SidebarDestination(
-          icon: Icons.inventory_2_outlined,
-          selectedIcon: Icons.inventory_2,
-          label: 'Inventaris',
+          icon: Icons.home_outlined,
+          selectedIcon: Icons.home,
+          label: 'Beranda',
           index: 0,
-        ),
-        SidebarDestination(
-          icon: Icons.style_outlined,
-          selectedIcon: Icons.style,
-          label: 'Padu Padan',
-          index: 1,
-        ),
-        SidebarDestination(
-          icon: Icons.shopping_cart_checkout_outlined,
-          selectedIcon: Icons.shopping_cart_checkout,
-          label: 'Kasir',
-          index: 2,
         ),
         SidebarDestination(
           icon: Icons.receipt_long_outlined,
           selectedIcon: Icons.receipt_long,
           label: 'Transaksi',
-          index: 3,
+          index: 1,
         ),
         SidebarDestination(
           icon: Icons.calendar_month_outlined,
           selectedIcon: Icons.calendar_month,
-          label: 'Pekerjaan',
-          index: 4,
+          label: 'Jadwal',
+          index: 2,
         ),
         SidebarDestination(
-          icon: Icons.date_range_outlined,
-          selectedIcon: Icons.date_range,
-          label: 'Jadwal',
-          index: 5,
+          icon: Icons.settings_outlined,
+          selectedIcon: Icons.settings,
+          label: 'Pengaturan',
+          index: 3,
         ),
-        if (user?.isOwner == true)
-          SidebarDestination(
-            icon: Icons.people_outline,
-            selectedIcon: Icons.people,
-            label: 'Karyawan',
-            index: 6,
-          ),
-        if (user?.isOwner == true)
-          SidebarDestination(
-            icon: Icons.settings_outlined,
-            selectedIcon: Icons.settings,
-            label: 'Pengaturan',
-            index: 7,
-          ),
       ];
 
       return Scaffold(
@@ -309,13 +270,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: Column(
                         children: sidebarDestinations.map((dest) {
+                          final isSelected = (_selectedIndex > 3 && dest.index == 0) || (_selectedIndex == dest.index);
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: SidebarItem(
                               icon: dest.icon,
                               selectedIcon: dest.selectedIcon,
                               label: dest.label,
-                              isSelected: _selectedIndex == dest.index,
+                              isSelected: isSelected,
                               onTap: () => setState(() => _selectedIndex = dest.index),
                             ),
                           );
@@ -361,10 +323,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    return Scaffold(
-      body: ResponsiveLayout(
-        mobileBody: mobileLayout(),
-        tabletBody: tabletLayout(),
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        setState(() {
+          _selectedIndex = 0;
+        });
+      },
+      child: Scaffold(
+        body: ResponsiveLayout(
+          mobileBody: mobileLayout(),
+          tabletBody: tabletLayout(),
+        ),
       ),
     );
   }
