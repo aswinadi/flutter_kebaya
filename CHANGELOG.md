@@ -15,7 +15,7 @@ All notable changes to the Flutter client application of the Caroline Lauda Keba
   - Implemented a dedicated "Transaksi" (Transactions) tab visible to all users (owners and workers).
   - Displays Invoice Number, Event Date, Customer Name/Phone, Notes, Gowns list, and Total Amount (only visible to owners).
   - Supports dynamic query searching and filtering by transaction status (Dipesan, Diambil, Kembali, Batal, Void).
-  - Built full **Edit** capabilities (updating customer details, date, status, notes) and quick **Void** operations directly from the list view.
+  - Built full **Edit** capabilities (updating customer details, date, status, notes, and **removing/adding rental gowns** inside the transaction) and quick **Void** operations directly from the list view.
 - **Dedicated System Settings Tab (`SettingsTab`)**:
   - Added a dedicated "Pengaturan" tab visible to all users to configure the reservation date locking period (owner only) and view user profiles.
 - **Indonesian Localization**:
