@@ -57,52 +57,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isMobile = ResponsiveLayout.isMobile(context);
 
     final List<Widget> tabs = [
-      HomeTab(onNavigate: (index) => setState(() => _selectedIndex = index)),
-      const RentalsTab(),
-      const ScheduleTab(),
-      const SettingsTab(),
-      const CheckoutTab(),
-      const MixMatchTab(),
       const InventoryTab(),
+      const MixMatchTab(),
+      const CheckoutTab(),
+      const RentalsTab(),
       const JobOrderTab(),
+      const ScheduleTab(),
       const EmployeeTab(),
+      const SettingsTab(),
+      HomeTab(onNavigate: (index) => setState(() => _selectedIndex = index)),
     ];
 
     final List<String> titles = [
-      'Beranda Toko',
-      'Daftar Transaksi Penyewaan',
-      'Kalender Jadwal Reservasi',
-      'Pengaturan Sistem',
-      'Kasir Padu Padan POS',
-      'Padu Padan Katalog',
       'Katalog Produk & Inventaris',
+      'Padu Padan Katalog',
+      'Kasir Padu Padan POS',
+      'Daftar Transaksi Penyewaan',
       'Pekerjaan Produksi & Permak',
+      'Kalender Jadwal Reservasi',
       'Manajemen Karyawan',
+      'Pengaturan Sistem',
+      'Beranda Toko',
     ];
 
     if (_selectedIndex >= tabs.length) {
-      _selectedIndex = 0;
+      _selectedIndex = 8; // Default to HomeTab on mobile
+    }
+
+    if (!isMobile && _selectedIndex == 8) {
+      _selectedIndex = 0; // Default to Inventaris (index 0) on tablet
     }
 
     Widget buildAppBar() {
       final List<String> mobileTitles = [
-        'Beranda',
-        'Transaksi',
-        'Jadwal',
-        'Pengaturan',
-        'Kasir',
-        'Padu Padan',
         'Inventaris',
+        'Padu Padan',
+        'Kasir',
+        'Transaksi',
         'Pekerjaan',
+        'Jadwal',
         'Karyawan',
+        'Pengaturan',
+        'Beranda',
       ];
       final displayTitle = isMobile ? mobileTitles[_selectedIndex] : titles[_selectedIndex];
 
       return AppBar(
-        leading: _selectedIndex > 3
+        leading: (isMobile && _selectedIndex != 3 && _selectedIndex != 5 && _selectedIndex != 7 && _selectedIndex != 8)
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => setState(() => _selectedIndex = 0),
+                onPressed: () => setState(() => _selectedIndex = 8),
               )
             : null,
         title: Column(
@@ -185,8 +189,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         appBar: buildAppBar() as PreferredSizeWidget?,
         body: tabs[_selectedIndex],
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
+          currentIndex: _selectedIndex == 3
+              ? 1
+              : _selectedIndex == 5
+                  ? 2
+                  : _selectedIndex == 7
+                      ? 3
+                      : 0,
+          onTap: (index) {
+            setState(() {
+              if (index == 0) {
+                _selectedIndex = 8;
+              } else if (index == 1) {
+                _selectedIndex = 3;
+              } else if (index == 2) {
+                _selectedIndex = 5;
+              } else if (index == 3) {
+                _selectedIndex = 7;
+              }
+            });
+          },
           selectedItemColor: primaryColor,
           unselectedItemColor: Colors.grey[500],
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
@@ -221,29 +243,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Widget tabletLayout() {
       final List<SidebarDestination> sidebarDestinations = [
         SidebarDestination(
-          icon: Icons.home_outlined,
-          selectedIcon: Icons.home,
-          label: 'Beranda',
+          icon: Icons.inventory_2_outlined,
+          selectedIcon: Icons.inventory_2,
+          label: 'Inventaris',
           index: 0,
+        ),
+        SidebarDestination(
+          icon: Icons.style_outlined,
+          selectedIcon: Icons.style,
+          label: 'Padu Padan',
+          index: 1,
+        ),
+        SidebarDestination(
+          icon: Icons.shopping_cart_checkout_outlined,
+          selectedIcon: Icons.shopping_cart_checkout,
+          label: 'Kasir',
+          index: 2,
         ),
         SidebarDestination(
           icon: Icons.receipt_long_outlined,
           selectedIcon: Icons.receipt_long,
           label: 'Transaksi',
-          index: 1,
+          index: 3,
         ),
         SidebarDestination(
           icon: Icons.calendar_month_outlined,
           selectedIcon: Icons.calendar_month,
-          label: 'Jadwal',
-          index: 2,
+          label: 'Pekerjaan',
+          index: 4,
         ),
         SidebarDestination(
-          icon: Icons.settings_outlined,
-          selectedIcon: Icons.settings,
-          label: 'Pengaturan',
-          index: 3,
+          icon: Icons.date_range_outlined,
+          selectedIcon: Icons.date_range,
+          label: 'Jadwal',
+          index: 5,
         ),
+        if (user?.isOwner == true)
+          SidebarDestination(
+            icon: Icons.people_outline,
+            selectedIcon: Icons.people,
+            label: 'Karyawan',
+            index: 6,
+          ),
+        if (user?.isOwner == true)
+          SidebarDestination(
+            icon: Icons.settings_outlined,
+            selectedIcon: Icons.settings,
+            label: 'Pengaturan',
+            index: 7,
+          ),
       ];
 
       return Scaffold(
@@ -270,7 +318,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: Column(
                         children: sidebarDestinations.map((dest) {
-                          final isSelected = (_selectedIndex > 3 && dest.index == 0) || (_selectedIndex == dest.index);
+                          final isSelected = _selectedIndex == dest.index;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: SidebarItem(
@@ -324,11 +372,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return PopScope(
-      canPop: _selectedIndex == 0,
+      canPop: !isMobile || _selectedIndex == 8,
       onPopInvoked: (didPop) {
         if (didPop) return;
         setState(() {
-          _selectedIndex = 0;
+          _selectedIndex = 8;
         });
       },
       child: Scaffold(

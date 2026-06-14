@@ -45,7 +45,7 @@ class _HomeTabState extends State<HomeTab> {
         'desc': 'Pemesanan baru & pembayaran',
         'icon': Icons.shopping_cart_checkout_outlined,
         'color': Colors.deepPurple[700]!,
-        'index': 4,
+        'index': 2,
         'visible': true,
       },
       {
@@ -53,7 +53,7 @@ class _HomeTabState extends State<HomeTab> {
         'desc': 'Simulasi setelan kebaya',
         'icon': Icons.style_outlined,
         'color': Colors.indigo[700]!,
-        'index': 5,
+        'index': 1,
         'visible': true,
       },
       {
@@ -61,7 +61,7 @@ class _HomeTabState extends State<HomeTab> {
         'desc': 'Kelola pakaian & aksesoris',
         'icon': Icons.inventory_2_outlined,
         'color': Colors.blue[700]!,
-        'index': 6,
+        'index': 0,
         'visible': true,
       },
       {
@@ -69,7 +69,7 @@ class _HomeTabState extends State<HomeTab> {
         'desc': 'Kelola pekerjaan produksi',
         'icon': Icons.handyman_outlined,
         'color': Colors.amber[800]!,
-        'index': 7,
+        'index': 4,
         'visible': true,
       },
       {
@@ -77,7 +77,7 @@ class _HomeTabState extends State<HomeTab> {
         'desc': 'Manajemen staf & akun',
         'icon': Icons.people_outline,
         'color': Colors.teal[700]!,
-        'index': 8,
+        'index': 6,
         'visible': user?.isOwner == true,
       },
     ];

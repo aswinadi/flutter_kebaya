@@ -236,6 +236,6 @@ void main() {
     await tester.tap(find.text('Kasir POS'));
     await tester.pumpAndSettle();
 
-    expect(navigatedIndex, 4);
+    expect(navigatedIndex, 2);
   });
 }
