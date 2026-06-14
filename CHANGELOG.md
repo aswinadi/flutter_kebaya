@@ -6,13 +6,18 @@ All notable changes to the Flutter client application of the Caroline Lauda Keba
 
 ## [1.5.0] - 2026-06-14
 ### Added
+- **Simplified Navigation & Home Tab Dashboard (`HomeTab`)**:
+  - Re-architected client navigation to simplify the bottom navigation bar and sidebar rail down to 4 core tabs: Beranda (Home), Transaksi (Rental), Jadwal (Calendar), and Pengaturan (Setting).
+  - Designed a premium grid-based Home tab dashboard featuring quick stats, date indicators, welcome cards, and shortcut buttons to navigate to sub-pages (Kasir POS, Padu Padan, Katalog, Pekerjaan, Karyawan).
+  - Added back button logic to the top AppBar for all sub-pages and intercepting Android back presses with `PopScope` to return to Home.
+  - Made the `SettingsTab` accessible to all users, showing profile info for everyone and restricting the date locking period config form to owners.
 - **Rental Transaction Management Menu (`RentalsTab`)**:
   - Implemented a dedicated "Transaksi" (Transactions) tab visible to all users (owners and workers).
   - Displays Invoice Number, Event Date, Customer Name/Phone, Notes, Gowns list, and Total Amount (only visible to owners).
   - Supports dynamic query searching and filtering by transaction status (Dipesan, Diambil, Kembali, Batal, Void).
   - Built full **Edit** capabilities (updating customer details, date, status, notes) and quick **Void** operations directly from the list view.
 - **Dedicated System Settings Tab (`SettingsTab`)**:
-  - Added a dedicated "Pengaturan" tab visible only to the owner to configure the reservation date locking period.
+  - Added a dedicated "Pengaturan" tab visible to all users to configure the reservation date locking period (owner only) and view user profiles.
 - **Indonesian Localization**:
   - Localized 100% of the customer and worker interfaces into Indonesian (navigation, catalog, checkout, calendar, status labels).
 - **Multi-Photo Upload Support**:
