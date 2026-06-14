@@ -45,7 +45,7 @@ class Rental {
   final String customerName;
   final String? customerPhone;
   final DateTime eventDate;
-  final String status; // 'booked', 'picked_up', 'returned', 'cancelled'
+  final String status; // 'booked', 'picked_up', 'returned', 'cancelled', 'void'
   final String? groupOrderName;
   final double? totalAmount; // Nullable for workers
   final String? clientPicUrl;

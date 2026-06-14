@@ -10,6 +10,7 @@ import 'schedule_tab.dart';
 import 'mix_match_tab.dart';
 import 'employee_tab.dart';
 import 'settings_tab.dart';
+import 'rentals_tab.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/profile_dialog.dart';
 
@@ -58,6 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const InventoryTab(),
       const MixMatchTab(),
       const CheckoutTab(),
+      const RentalsTab(),
       const JobOrderTab(),
       const ScheduleTab(),
       if (user?.isOwner == true) const EmployeeTab(),
@@ -68,6 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Katalog Produk & Inventaris',
       'Padu Padan Katalog',
       'Kasir Padu Padan POS',
+      'Daftar Transaksi Penyewaan',
       'Pekerjaan Produksi & Permak',
       'Kalender Jadwal Reservasi',
       if (user?.isOwner == true) 'Manajemen Karyawan',
@@ -84,6 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               'Inventaris',
               'Padu Padan',
               'Kasir',
+              'Transaksi',
               'Pekerjaan',
               'Jadwal',
               if (user?.isOwner == true) 'Karyawan',
@@ -195,6 +199,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               label: 'Kasir',
             ),
             const BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined),
+              activeIcon: Icon(Icons.receipt_long),
+              label: 'Transaksi',
+            ),
+            const BottomNavigationBarItem(
               icon: Icon(Icons.calendar_month_outlined),
               activeIcon: Icon(Icons.calendar_month),
               label: 'Pekerjaan',
@@ -243,30 +252,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
           index: 2,
         ),
         SidebarDestination(
+          icon: Icons.receipt_long_outlined,
+          selectedIcon: Icons.receipt_long,
+          label: 'Transaksi',
+          index: 3,
+        ),
+        SidebarDestination(
           icon: Icons.calendar_month_outlined,
           selectedIcon: Icons.calendar_month,
           label: 'Pekerjaan',
-          index: 3,
+          index: 4,
         ),
         SidebarDestination(
           icon: Icons.date_range_outlined,
           selectedIcon: Icons.date_range,
           label: 'Jadwal',
-          index: 4,
+          index: 5,
         ),
         if (user?.isOwner == true)
           SidebarDestination(
             icon: Icons.people_outline,
             selectedIcon: Icons.people,
             label: 'Karyawan',
-            index: 5,
+            index: 6,
           ),
         if (user?.isOwner == true)
           SidebarDestination(
             icon: Icons.settings_outlined,
             selectedIcon: Icons.settings,
             label: 'Pengaturan',
-            index: 6,
+            index: 7,
           ),
       ];
 

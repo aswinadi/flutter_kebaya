@@ -32,7 +32,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
   // Helper: Get list of rentals whose event_date matches a specific day
   List<Rental> _getRentalsForDay(DateTime day, List<Rental> rentals) {
     return rentals.where((rental) {
-      if (rental.status == 'cancelled') return false;
+      if (rental.status == 'cancelled' || rental.status == 'void') return false;
       return rental.eventDate.year == day.year &&
           rental.eventDate.month == day.month &&
           rental.eventDate.day == day.day;
@@ -49,7 +49,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
   // Helper: Get list of rentals whose block period covers a specific day
   List<Rental> _getBlockRentalsForDay(DateTime day, List<Rental> rentals, int lockDays) {
     return rentals.where((rental) {
-      if (rental.status == 'cancelled') return false;
+      if (rental.status == 'cancelled' || rental.status == 'void') return false;
       final diff = _daysBetween(rental.eventDate, day);
       return diff > 0 && diff <= lockDays;
     }).toList();
@@ -165,6 +165,7 @@ class _ScheduleTabState extends State<ScheduleTab> {
                         DropdownMenuItem(value: 'picked_up', child: Text('Diambil (Picked Up)')),
                         DropdownMenuItem(value: 'returned', child: Text('Dikembalikan (Returned)')),
                         DropdownMenuItem(value: 'cancelled', child: Text('Dibatalkan (Cancelled)')),
+                        DropdownMenuItem(value: 'void', child: Text('Void')),
                       ],
                       onChanged: (val) {
                         if (val != null) setModalState(() => selectedStatus = val);

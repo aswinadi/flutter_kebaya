@@ -46,7 +46,7 @@ class _MixMatchTabState extends State<MixMatchTab> {
   // Determine if a specific item is blocked on a given date (dead zone based on locking period)
   bool _isItemBlockedOnDate(int itemId, DateTime date, List<Rental> rentals, int lockDays) {
     for (final rental in rentals) {
-      if (rental.status == 'cancelled') continue;
+      if (rental.status == 'cancelled' || rental.status == 'void') continue;
       final diff = _daysBetween(rental.eventDate, date);
       if (diff <= lockDays) {
         for (final item in rental.items) {
