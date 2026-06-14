@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/rental.dart';
+import '../models/inventory_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/rental_provider.dart';
+import '../providers/inventory_provider.dart';
 
 class RentalsTab extends StatefulWidget {
   const RentalsTab({Key? key}) : super(key: key);
@@ -60,6 +62,86 @@ class _RentalsTabState extends State<RentalsTab> {
     }
   }
 
+  // Show dialog to choose an item to add to the rental
+  Future<InventoryItem?> _showSelectItemDialog() async {
+    final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
+    await inventoryProvider.fetchInventory();
+    final items = inventoryProvider.items;
+    String search = '';
+    
+    return showDialog<InventoryItem>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSubState) {
+            final filtered = items.where((item) {
+              final query = search.toLowerCase();
+              return item.name.toLowerCase().contains(query) ||
+                  item.sku.toLowerCase().contains(query) ||
+                  (item.color ?? '').toLowerCase().contains(query);
+            }).toList();
+
+            return AlertDialog(
+              title: const Text('Pilih Pakaian'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Cari Pakaian...',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) {
+                        setSubState(() => search = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? const Center(child: Text('Pakaian tidak ditemukan'))
+                          : ListView.builder(
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final item = filtered[index];
+                                return ListTile(
+                                  leading: item.imageUrl != null
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: Image.network(
+                                            item.imageUrl!,
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => const Icon(Icons.image),
+                                          ),
+                                        )
+                                      : const Icon(Icons.image),
+                                  title: Text(item.name),
+                                  subtitle: Text('${item.sku} - ${item.size} / ${item.color}'),
+                                  onTap: () => Navigator.of(context).pop(item),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Batal'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   // Show dialog to edit transaction details
   void _showEditRentalDialog(Rental rental) {
     final nameCtrl = TextEditingController(text: rental.customerName);
@@ -67,6 +149,7 @@ class _RentalsTabState extends State<RentalsTab> {
     final notesCtrl = TextEditingController(text: rental.notes);
     DateTime selectedDate = rental.eventDate;
     String selectedStatus = rental.status;
+    List<RentalComponent> editedItems = List.from(rental.items);
 
     showDialog(
       context: context,
@@ -135,6 +218,76 @@ class _RentalsTabState extends State<RentalsTab> {
                       maxLines: 3,
                       decoration: const InputDecoration(labelText: 'Catatan Internal', border: OutlineInputBorder()),
                     ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Pakaian Sewa (Items)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // List of items
+                    ...List.generate(editedItems.length, (index) {
+                      final item = editedItems[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: item.imageUrl != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  item.imageUrl!,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+                                ),
+                              )
+                            : const Icon(Icons.image),
+                        title: Text(item.name ?? 'Unknown item', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        subtitle: Text('${item.sku ?? ''} - ${item.size ?? ''} / ${item.color ?? ''}', style: const TextStyle(fontSize: 11)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () {
+                            setModalState(() {
+                              editedItems.removeAt(index);
+                            });
+                          },
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final selectedItem = await _showSelectItemDialog();
+                        if (selectedItem != null) {
+                          setModalState(() {
+                            editedItems.add(
+                              RentalComponent(
+                                id: 0,
+                                inventoryItemId: selectedItem.id,
+                                name: selectedItem.name,
+                                sku: selectedItem.sku,
+                                type: selectedItem.type,
+                                size: selectedItem.size,
+                                color: selectedItem.color,
+                                imageUrl: selectedItem.imageUrl,
+                                rentalPrice: selectedItem.rentalRate,
+                              ),
+                            );
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Tambah Pakaian'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple[50],
+                        foregroundColor: Colors.purple[900],
+                        elevation: 0,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -151,8 +304,19 @@ class _RentalsTabState extends State<RentalsTab> {
                       );
                       return;
                     }
+                    if (editedItems.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pemesanan harus memiliki minimal 1 pakaian')),
+                      );
+                      return;
+                    }
 
                     final provider = Provider.of<RentalProvider>(context, listen: false);
+                    final itemsParam = editedItems.map((item) => {
+                      'inventory_item_id': item.inventoryItemId,
+                      'rental_price': item.rentalPrice,
+                    }).toList();
+
                     final success = await provider.updateRentalDetails(
                       rental.id,
                       customerName: nameCtrl.text,
@@ -160,6 +324,7 @@ class _RentalsTabState extends State<RentalsTab> {
                       eventDate: selectedDate,
                       status: selectedStatus,
                       notes: notesCtrl.text,
+                      items: itemsParam,
                     );
 
                     if (context.mounted) {

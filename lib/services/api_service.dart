@@ -450,6 +450,7 @@ class ApiService {
     DateTime? eventDate,
     String? groupOrderName,
     String? notes,
+    List<Map<String, dynamic>>? items,
     List<File>? clientPicFiles,
     List<File>? beforePhotos,
     List<File>? afterPhotos,
@@ -468,6 +469,15 @@ class ApiService {
     if (eventDate != null) request.fields['event_date'] = eventDate.toIso8601String();
     if (groupOrderName != null) request.fields['group_order_name'] = groupOrderName;
     if (notes != null) request.fields['notes'] = notes;
+
+    if (items != null) {
+      for (int i = 0; i < items.length; i++) {
+        request.fields['items[$i][inventory_item_id]'] = items[i]['inventory_item_id'].toString();
+        if (items[i]['rental_price'] != null) {
+          request.fields['items[$i][rental_price]'] = items[i]['rental_price'].toString();
+        }
+      }
+    }
 
     if (clientPicFiles != null) {
       for (var file in clientPicFiles) {
