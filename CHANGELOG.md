@@ -4,6 +4,38 @@ All notable changes to the Flutter client application of the Caroline Lauda Keba
 
 ---
 
+## [1.5.0] - 2026-06-14
+### Added
+- **Rental Transaction Management Menu (`RentalsTab`)**:
+  - Implemented a dedicated "Transaksi" (Transactions) tab visible to all users (owners and workers).
+  - Displays Invoice Number, Event Date, Customer Name/Phone, Notes, Gowns list, and Total Amount (only visible to owners).
+  - Supports dynamic query searching and filtering by transaction status (Dipesan, Diambil, Kembali, Batal, Void).
+  - Built full **Edit** capabilities (updating customer details, date, status, notes) and quick **Void** operations directly from the list view.
+- **Dedicated System Settings Tab (`SettingsTab`)**:
+  - Added a dedicated "Pengaturan" tab visible only to the owner to configure the reservation date locking period.
+- **Indonesian Localization**:
+  - Localized 100% of the customer and worker interfaces into Indonesian (navigation, catalog, checkout, calendar, status labels).
+- **Multi-Photo Upload Support**:
+  - Replaced single-photo capture with camera/gallery multi-selection tools for client outfit fitting and gown condition photos.
+- **Dynamic Tags & Filtering**:
+  - Enabled comma-separated tagging for gowns and interactive filter chips displaying tag counts in the catalog search bar.
+- **Custom Free-text Sizes**:
+  - Swapped size dropdowns for custom free-text input fields in inventory management.
+- **Multi-Keyword Search**:
+  - Upgraded inventory search to split input queries into tokens and match them across gown names, SKUs, colors, description, tags, and sizes.
+- **Employee Management Updates**:
+  - Added worker profile edit modals and password modification options in the Employee tab.
+
+### Changed
+- **Exclude Void/Cancelled Transactions**:
+  - Updated calendar day list logic and mix & match dead zones to completely ignore voided and cancelled transactions.
+- **Custom Sidebar**:
+  - Replaced the built-in `NavigationRail` with a custom scrollable sidebar to prevent viewport vertical height overflows and layout compression issues on small screens.
+
+### Fixed
+- **Dropdown and Text Layout Overflows**:
+  - Fixed calendar card legends, month chevrons, and text alignment wrapping under small viewports.
+
 ## [1.4.0] - 2026-05-30
 ### Added
 - **New Mix & Match Product Catalogue**:
