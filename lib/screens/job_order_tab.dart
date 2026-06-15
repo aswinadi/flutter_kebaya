@@ -5,6 +5,7 @@ import '../models/job_order.dart';
 import '../providers/auth_provider.dart';
 import '../providers/job_order_provider.dart';
 import '../widgets/responsive_layout.dart';
+import '../services/api_service.dart';
 
 class JobOrderTab extends StatefulWidget {
   const JobOrderTab({Key? key}) : super(key: key);
@@ -138,8 +139,15 @@ class _JobOrderTabState extends State<JobOrderTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${job.itemName} (${job.itemSku})',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      'Faktur: ${job.rentalInvoice ?? "-"}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      job.items.map((e) => e.name ?? '').join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -698,31 +706,91 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
               color: Colors.purple[50]!.withOpacity(0.5),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.checkroom, color: primaryColor, size: 36),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            job.itemName ?? 'Kebaya Kustom',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long, color: primaryColor, size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Faktur: ${job.rentalInvoice ?? "-"}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Pelanggan: ${job.customerName ?? "Pelanggan Walk-In"}',
+                                style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'SKU: ${job.itemSku} • Ukuran: ${job.itemSize} • Warna: ${job.itemColor}',
-                            style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Faktur: [${job.rentalInvoice}] • Pelanggan: ${job.customerName}',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                    if (job.items.isNotEmpty) ...[
+                      const Divider(height: 24, thickness: 1),
+                      Text(
+                        'Daftar Pakaian (Items):',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: primaryColor),
+                      ),
+                      const SizedBox(height: 8),
+                      ...job.items.map((item) {
+                        final imageUrl = ApiService().getMediaUrl(item.imageUrl);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.grey[100],
+                                  border: Border.all(color: Colors.grey[200]!),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: imageUrl.isNotEmpty
+                                      ? Image.network(
+                                          imageUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              const Icon(Icons.checkroom, color: Colors.grey, size: 24),
+                                        )
+                                      : const Icon(Icons.checkroom, color: Colors.grey, size: 24),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name ?? '',
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'SKU: ${item.sku} • Ukuran: ${item.size} • Warna: ${item.color}',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                    ),
+                                    Text(
+                                      'Jenis: ${item.type == "top" ? "Atasan" : "Bawahan"}',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
                   ],
                 ),
               ),
