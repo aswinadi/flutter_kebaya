@@ -47,6 +47,7 @@ class _EmployeeTabState extends State<EmployeeTab> {
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
     List<String> selectedRoles = [];
+    bool isActive = true;
 
     showDialog(
       context: context,
@@ -76,6 +77,16 @@ class _EmployeeTabState extends State<EmployeeTab> {
                       controller: passwordCtrl,
                       decoration: const InputDecoration(labelText: 'Kata Sandi (Password)'),
                       obscureText: true,
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: const Text('Status Aktif'),
+                      value: isActive,
+                      onChanged: (bool value) {
+                        setStateModal(() {
+                          isActive = value;
+                        });
+                      },
                     ),
                     const SizedBox(height: 16),
                     const Align(
@@ -118,6 +129,7 @@ class _EmployeeTabState extends State<EmployeeTab> {
                         email: emailCtrl.text,
                         password: passwordCtrl.text,
                         roles: selectedRoles,
+                        isActive: isActive,
                       );
                       if (mounted) {
                         Navigator.of(context).pop();
@@ -145,6 +157,7 @@ class _EmployeeTabState extends State<EmployeeTab> {
     final emailCtrl = TextEditingController(text: user.email);
     final passwordCtrl = TextEditingController();
     List<String> selectedRoles = List<String>.from(user.roles);
+    bool isActive = user.isActive;
 
     showDialog(
       context: context,
@@ -176,6 +189,16 @@ class _EmployeeTabState extends State<EmployeeTab> {
                         labelText: 'Kata Sandi Baru (Kosongkan jika tidak diubah)',
                       ),
                       obscureText: true,
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: const Text('Status Aktif'),
+                      value: isActive,
+                      onChanged: (bool value) {
+                        setStateModal(() {
+                          isActive = value;
+                        });
+                      },
                     ),
                     const SizedBox(height: 16),
                     const Align(
@@ -219,6 +242,7 @@ class _EmployeeTabState extends State<EmployeeTab> {
                         email: emailCtrl.text,
                         password: passwordCtrl.text.isNotEmpty ? passwordCtrl.text : null,
                         roles: selectedRoles,
+                        isActive: isActive,
                       );
                       if (mounted) {
                         Navigator.of(context).pop();
@@ -264,25 +288,36 @@ class _EmployeeTabState extends State<EmployeeTab> {
                 child: Text(user.name[0].toUpperCase()),
               ),
               title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('${user.email} | @${user.username}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...user.roles.map((r) => Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: Chip(
-                      label: Text(r.toUpperCase(), style: const TextStyle(fontSize: 10)),
-                      backgroundColor: r == 'owner' || r == 'super_admin' ? Colors.red[100] : Colors.green[100],
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  )).toList(),
-                  IconButton(
-                    icon: Icon(Icons.edit_outlined, color: Colors.purple[900]),
-                    onPressed: () => _showEditUserModal(user),
-                    tooltip: 'Edit Karyawan',
+                  Text('${user.email} | @${user.username}'),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      ...user.roles.map((r) => Chip(
+                        label: Text(r.toUpperCase(), style: const TextStyle(fontSize: 9)),
+                        backgroundColor: r == 'owner' || r == 'super_admin' ? Colors.red[100] : Colors.green[100],
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      )),
+                      if (!user.isActive)
+                        Chip(
+                          label: const Text('NON-AKTIF', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                          backgroundColor: Colors.grey[600],
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                    ],
                   ),
                 ],
+              ),
+              trailing: IconButton(
+                icon: Icon(Icons.edit_outlined, color: Colors.purple[900]),
+                onPressed: () => _showEditUserModal(user),
+                tooltip: 'Edit Karyawan',
               ),
             ),
           );

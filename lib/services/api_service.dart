@@ -127,6 +127,7 @@ class ApiService {
     required String email,
     required String password,
     required List<String> roles,
+    bool? isActive,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/users'),
@@ -137,6 +138,7 @@ class ApiService {
         'email': email,
         'password': password,
         'roles': roles,
+        if (isActive != null) 'is_active': isActive,
       }),
     );
 
@@ -156,6 +158,7 @@ class ApiService {
     required String email,
     String? password,
     required List<String> roles,
+    bool? isActive,
   }) async {
     final body = {
       'name': name,
@@ -163,6 +166,7 @@ class ApiService {
       'email': email,
       if (password != null && password.isNotEmpty) 'password': password,
       'roles': roles,
+      if (isActive != null) 'is_active': isActive,
     };
 
     final response = await http.put(

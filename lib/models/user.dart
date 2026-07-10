@@ -4,6 +4,7 @@ class User {
   final String? username;
   final String email;
   final List<String> roles;
+  final bool isActive;
 
   User({
     required this.id,
@@ -11,6 +12,7 @@ class User {
     this.username,
     required this.email,
     required this.roles,
+    this.isActive = true,
   });
 
   bool get isOwner => roles.contains('owner') || roles.contains('super_admin');
@@ -22,6 +24,7 @@ class User {
       username: json['username'] as String?,
       email: json['email'] as String,
       roles: List<String>.from(json['roles'] ?? []),
+      isActive: json['is_active'] ?? true,
     );
   }
 
@@ -32,6 +35,7 @@ class User {
       'username': username,
       'email': email,
       'roles': roles,
+      'is_active': isActive,
     };
   }
 }

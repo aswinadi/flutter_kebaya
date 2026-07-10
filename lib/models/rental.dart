@@ -91,7 +91,7 @@ class Rental {
       invoiceNumber: json['invoice_number'] as String,
       customerName: json['customer_name'] as String,
       customerPhone: json['customer_phone'] as String?,
-      eventDate: DateTime.parse(json['event_date'] as String),
+      eventDate: DateTime.parse(json['event_date'] as String).toLocal(),
       status: json['status'] as String,
       groupOrderName: json['group_order_name'] as String?,
       totalAmount: json['total_amount'] != null ? double.tryParse(json['total_amount'].toString()) : null,

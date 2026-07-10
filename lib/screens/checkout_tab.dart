@@ -76,12 +76,14 @@ class _CheckoutTabState extends State<CheckoutTab> {
           .toList();
 
       if (conflictNames.isNotEmpty && mounted) {
+        final lockPeriod = Provider.of<RentalProvider>(context, listen: false).dateLockingPeriod;
+        final blockDays = lockPeriod * 2;
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Konflik Ketersediaan!'),
             content: Text(
-              'Item berikut dalam keranjang Anda sudah dipesan (termasuk aturan pemblokiran 28 hari) pada tanggal ini:\n\n'
+              'Item berikut dalam keranjang Anda sudah dipesan (termasuk aturan pemblokiran $blockDays hari) pada tanggal ini:\n\n'
               '${conflictNames.map((n) => '• $n').join('\n')}\n\n'
               'Silakan hapus item tersebut atau pilih tanggal lain.',
             ),
@@ -114,9 +116,11 @@ class _CheckoutTabState extends State<CheckoutTab> {
 
   void _addItemToCart(InventoryItem item) {
     if (_selectedDate != null && _unavailableItemIds.contains(item.id)) {
+      final lockPeriod = Provider.of<RentalProvider>(context, listen: false).dateLockingPeriod;
+      final blockDays = lockPeriod * 2;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item ini tidak tersedia pada tanggal yang dipilih! (Blokir 28 hari)'),
+        SnackBar(
+          content: Text('Item ini tidak tersedia pada tanggal yang dipilih! (Blokir $blockDays hari)'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -661,6 +665,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
                             'Selesaikan Pemesanan & Checkout (Rp ${NumberFormat('#,###').format(_totalAmount)})',
+                            textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                   );
@@ -948,9 +953,9 @@ class _CheckoutTabState extends State<CheckoutTab> {
                                         ),
                                       ),
                                       subtitle: isUnavailable
-                                          ? const Text(
-                                              'Dipesan / Diblokir (Blokir 28 hari)',
-                                              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 10),
+                                          ? Text(
+                                              'Dipesan / Diblokir (Blokir ${Provider.of<RentalProvider>(context, listen: false).dateLockingPeriod * 2} hari)',
+                                              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 10),
                                             )
                                           : Text('${item.sku} • Uk: ${item.size} • Rp ${NumberFormat('#,###').format(item.rentalRate ?? 0)}'),
                                       trailing: IconButton(

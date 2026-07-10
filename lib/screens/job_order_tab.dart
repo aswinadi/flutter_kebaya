@@ -688,6 +688,7 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
     }
 
     final primaryColor = Colors.purple[900]!;
+    final isMobile = ResponsiveLayout.isMobile(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -814,11 +815,11 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        // Status picker
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
+                    if (isMobile)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          DropdownButtonFormField<String>(
                             value: _status,
                             decoration: InputDecoration(
                               labelText: 'Status Permak',
@@ -835,11 +836,8 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                               });
                             },
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Due date select
-                        Expanded(
-                          child: InkWell(
+                          const SizedBox(height: 16),
+                          InkWell(
                             onTap: widget.isOwner ? _selectDueDate : null,
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
@@ -876,9 +874,74 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      )
+                    else
+                      Row(
+                        children: [
+                          // Status picker
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _status,
+                              decoration: InputDecoration(
+                                labelText: 'Status Permak',
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'pending', child: Text('Tertunda')),
+                                DropdownMenuItem(value: 'in_progress', child: Text('Sedang Dikerjakan')),
+                                DropdownMenuItem(value: 'completed', child: Text('Selesai')),
+                              ],
+                              onChanged: (val) {
+                                setState(() {
+                                  _status = val;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Due date select
+                          Expanded(
+                            child: InkWell(
+                              onTap: widget.isOwner ? _selectDueDate : null,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: widget.isOwner ? Colors.purple[800]! : Colors.grey[400]!,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: widget.isOwner ? null : Colors.grey[100],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tenggat Waktu (Hanya Pemilik)',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: widget.isOwner ? Colors.purple[800] : Colors.grey[600],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _dueDate == null
+                                          ? 'Atur Target Tenggat Waktu'
+                                          : DateFormat('d MMM y • HH:mm', 'id').format(_dueDate!),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: widget.isOwner ? Colors.black87 : Colors.grey[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _notesController,
@@ -919,36 +982,64 @@ class _JobOrderDetailsPaneState extends State<JobOrderDetailsPane> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Audit Pekerjaan Penjahit / Karyawan',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Total Master: ${job.totalManDays.toStringAsFixed(3)} Man-Days',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
-                            ),
-                          ],
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: _showAddLaborDialog,
-                          icon: const Icon(Icons.add_task),
-                          label: const Text('Catat Pekerjaan', style: TextStyle(fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueGrey[800],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    if (isMobile)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Audit Pekerjaan Penjahit / Karyawan',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Total Master: ${job.totalManDays.toStringAsFixed(3)} Man-Days',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: _showAddLaborDialog,
+                            icon: const Icon(Icons.add_task),
+                            label: const Text('Catat Pekerjaan', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey[800],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Audit Pekerjaan Penjahit / Karyawan',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: primaryColor),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Total Master: ${job.totalManDays.toStringAsFixed(3)} Man-Days',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: _showAddLaborDialog,
+                            icon: const Icon(Icons.add_task),
+                            label: const Text('Catat Pekerjaan', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey[800],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ],
+                      ),
                     const Divider(height: 24),
                     if (job.laborLogs.isEmpty)
                       Center(

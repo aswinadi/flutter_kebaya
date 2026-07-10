@@ -108,7 +108,7 @@ class JobOrder {
       itemType: json['item_type'] as String?,
       itemImageUrl: json['item_image_url'] as String?,
       itemImagePath: json['item_image_path'] as String?,
-      dueDate: DateTime.parse(json['due_date'] as String),
+      dueDate: DateTime.parse(json['due_date'] as String).toLocal(),
       status: json['status'] as String,
       instructions: json['instructions'] as String?,
       totalManDays: double.parse(json['total_man_days'].toString()),

@@ -598,7 +598,9 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            '${job.itemName} (${job.itemSku})',
+                                            job.items.isNotEmpty
+                                                ? job.items.map((i) => '${i.name ?? 'Gown'} (${i.sku ?? ''})').join(', ')
+                                                : 'Permak Transaksi',
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -629,6 +631,17 @@ class _ScheduleTabState extends State<ScheduleTab> {
                                         style: TextStyle(fontSize: 11, color: Colors.grey[800], fontStyle: FontStyle.italic),
                                       ),
                                     ],
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      job.laborLogs.isNotEmpty
+                                          ? 'Pekerja: ${job.laborLogs.map((log) => log.workerName ?? 'Staf').toSet().join(', ')}'
+                                          : 'Pekerja: Belum ada pengerjaan / Belum ditugaskan',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: job.laborLogs.isNotEmpty ? Colors.purple[800] : Colors.grey[600],
+                                      ),
+                                    ),
                                     const SizedBox(height: 6),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
