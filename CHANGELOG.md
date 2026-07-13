@@ -4,6 +4,29 @@ All notable changes to the Flutter client application of the Caroline Lauda Keba
 
 ---
 
+## [1.6.0] - 2026-07-13
+### Added
+- **Shopping Cart & Checkout Wizard Flow (`CheckoutTab` & `MixMatchTab`)**:
+  - Implemented global state management using `RentalProvider` to handle shopping carts.
+  - Added a "Masukkan ke Keranjang" button in the Mannequin preview footer of `MixMatchTab` to queue selected tops and bottoms.
+  - Added a reactive Floating Action Button (FAB) showing the current cart item count.
+  - Refactored `CheckoutTab` into a 2-step checkout wizard (Step 1: review cart, edit custom prices, and search catalog; Step 2: customer details form, event date selector, fitting photo upload, and save transaction with backend Job Order integration).
+- **Fitting Photo Gallery Tab (`FittingGalleryTab`)**:
+  - Created a new `FittingGalleryTab` showing a grid layout of client fitting photos.
+  - Grouped and filterable by month using a dynamic horizontal chip list populated from database events.
+  - Displays Invoice Number, Event Date, Event/Customer Name, and gowns rented, with a full-screen zoom preview dialog.
+- **Interactive Click-to-Zoom Previews**:
+  - Added interactive click-to-zoom previews on clothing item thumbnails in `JobOrderDetailsPane`.
+  - Displayed client fitting photo in `JobOrderDetailsPane` with click-to-zoom options.
+- **Rentals Chronological Sorting**:
+  - Sorted the rentals list in `RentalsTab` by closest event date: upcoming events sorted ascending at the top, past events sorted descending at the bottom.
+
+### Fixed
+- **Layout Overflow Fixes**:
+  - Replaced Row with Wrap on item card price & availability row in `MixMatchTab` to prevent overflow in narrow views.
+  - Wrapped "PRATINJAU PAKAIAN" header in `mix_match_tab.dart` with `Expanded` to prevent right overflow when the "RESET" button appears.
+  - Refactored `CheckoutTab` cart panel to use `SingleChildScrollView` and dynamic shrink-wrapped ListViews instead of `Expanded` inside a fixed Column, preventing bottom overflows when the Android keyboard pops up.
+
 ## [1.5.0] - 2026-06-14
 ### Added
 - **Simplified Navigation & Home Tab Dashboard (`HomeTab`)**:
