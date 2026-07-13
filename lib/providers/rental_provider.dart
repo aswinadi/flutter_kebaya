@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/rental.dart';
+import '../models/cart_item.dart';
+import '../models/inventory_item.dart';
 import '../services/api_service.dart';
 
 class RentalProvider with ChangeNotifier {
@@ -10,10 +12,45 @@ class RentalProvider with ChangeNotifier {
   String? _error;
   int _dateLockingPeriod = 7;
 
+  // Shopping Cart state
+  final List<CartItem> _cart = [];
+
   List<Rental> get rentals => _rentals;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get dateLockingPeriod => _dateLockingPeriod;
+  List<CartItem> get cart => _cart;
+
+  void addToCart(InventoryItem item, {double? customPrice}) {
+    if (!_cart.any((element) => element.item.id == item.id)) {
+      _cart.add(CartItem(
+        item: item,
+        customPrice: customPrice ?? item.rentalRate ?? 0.0,
+      ));
+      notifyListeners();
+    }
+  }
+
+  void removeFromCart(int index) {
+    if (index >= 0 && index < _cart.length) {
+      _cart.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void clearCart() {
+    _cart.clear();
+    notifyListeners();
+  }
+
+  void updateCartItemPrice(int index, double price) {
+    if (index >= 0 && index < _cart.length) {
+      _cart[index].customPrice = price;
+      notifyListeners();
+    }
+  }
+
+  double get totalCartAmount => _cart.fold(0.0, (sum, element) => sum + element.customPrice);
 
   Future<void> fetchSettings() async {
     try {

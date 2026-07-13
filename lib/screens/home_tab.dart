@@ -73,6 +73,14 @@ class _HomeTabState extends State<HomeTab> {
         'visible': true,
       },
       {
+        'title': 'Galeri Fitting',
+        'desc': 'Foto fitting & tren event',
+        'icon': Icons.photo_library_outlined,
+        'color': Colors.pink[700]!,
+        'index': 9,
+        'visible': true,
+      },
+      {
         'title': 'Karyawan',
         'desc': 'Manajemen staf & akun',
         'icon': Icons.people_outline,

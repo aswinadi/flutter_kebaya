@@ -10,7 +10,8 @@ import '../widgets/responsive_layout.dart';
 import '../services/api_service.dart';
 
 class MixMatchTab extends StatefulWidget {
-  const MixMatchTab({Key? key}) : super(key: key);
+  final Function(int)? onNavigate;
+  const MixMatchTab({Key? key, this.onNavigate}) : super(key: key);
 
   @override
   State<MixMatchTab> createState() => _MixMatchTabState();
@@ -223,8 +224,11 @@ class _MixMatchTabState extends State<MixMatchTab> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 4,
+                          runSpacing: 4,
                           children: [
                             if (isOwner && item.rentalRate != null)
                               Text(
@@ -297,9 +301,13 @@ class _MixMatchTabState extends State<MixMatchTab> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'PRATINJAU PAKAIAN',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0, color: Colors.grey),
+                      const Expanded(
+                        child: Text(
+                          'PRATINJAU PAKAIAN',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.0, color: Colors.grey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       if (_selectedTop != null || _selectedBottom != null)
                         GestureDetector(
@@ -374,46 +382,96 @@ class _MixMatchTabState extends State<MixMatchTab> {
                 if (_selectedTop != null || _selectedBottom != null)
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_selectedTop != null)
-                                Text(
-                                  'Atasan: ${_selectedTop!.name}',
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              if (_selectedBottom != null)
-                                Text(
-                                  'Bawahan: ${_selectedBottom!.name}',
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (isOwner)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: primaryColor,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _formatRupiah(totalRate),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (_selectedTop != null)
+                                    Text(
+                                      'Atasan: ${_selectedTop!.name}',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  if (_selectedBottom != null)
+                                    Text(
+                                      'Bawahan: ${_selectedBottom!.name}',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
                               ),
                             ),
+                            if (isOwner)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: primaryColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _formatRupiah(totalRate),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
+                              int addedCount = 0;
+                              if (_selectedTop != null) {
+                                rentalProvider.addToCart(_selectedTop!);
+                                addedCount++;
+                              }
+                              if (_selectedBottom != null) {
+                                rentalProvider.addToCart(_selectedBottom!);
+                                addedCount++;
+                              }
+                              if (addedCount > 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('$addedCount item dimasukkan ke keranjang'),
+                                    backgroundColor: Colors.green,
+                                    action: SnackBarAction(
+                                      label: 'LIHAT',
+                                      textColor: Colors.white,
+                                      onPressed: () {
+                                        widget.onNavigate?.call(2); // Go to checkout tab
+                                      },
+                                    ),
+                                  ),
+                                );
+                                setState(() {
+                                  _selectedTop = null;
+                                  _selectedBottom = null;
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.add_shopping_cart, size: 16),
+                            label: const Text('Masukkan ke Keranjang', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -996,6 +1054,15 @@ class _MixMatchTabState extends State<MixMatchTab> {
           ),
         ],
       ),
+      floatingActionButton: rentalProvider.cart.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () => widget.onNavigate?.call(2),
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.shopping_cart),
+              label: Text('Keranjang (${rentalProvider.cart.length})'),
+            )
+          : null,
     );
   }
 }

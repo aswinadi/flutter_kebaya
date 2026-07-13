@@ -12,6 +12,7 @@ import 'employee_tab.dart';
 import 'settings_tab.dart';
 import 'rentals_tab.dart';
 import 'home_tab.dart';
+import 'fitting_gallery_tab.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/profile_dialog.dart';
 
@@ -58,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final List<Widget> tabs = [
       const InventoryTab(),
-      const MixMatchTab(),
+      MixMatchTab(onNavigate: (index) => setState(() => _selectedIndex = index)),
       const CheckoutTab(),
       const RentalsTab(),
       const JobOrderTab(),
@@ -66,6 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const EmployeeTab(),
       const SettingsTab(),
       HomeTab(onNavigate: (index) => setState(() => _selectedIndex = index)),
+      const FittingGalleryTab(),
     ];
 
     final List<String> titles = [
@@ -78,6 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'Manajemen Karyawan',
       'Pengaturan Sistem',
       'Beranda Toko',
+      'Galeri Foto Fitting',
     ];
 
     if (_selectedIndex >= tabs.length) {
@@ -99,6 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'Karyawan',
         'Pengaturan',
         'Beranda',
+        'Galeri Fitting',
       ];
       final displayTitle = isMobile ? mobileTitles[_selectedIndex] : titles[_selectedIndex];
 
@@ -277,6 +281,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           selectedIcon: Icons.date_range,
           label: 'Jadwal',
           index: 5,
+        ),
+        SidebarDestination(
+          icon: Icons.photo_library_outlined,
+          selectedIcon: Icons.photo_library,
+          label: 'Galeri Fitting',
+          index: 9,
         ),
         if (user?.isOwner == true)
           SidebarDestination(

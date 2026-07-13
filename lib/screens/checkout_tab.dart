@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../models/inventory_item.dart';
+import '../models/cart_item.dart';
 import '../providers/inventory_provider.dart';
 import '../providers/rental_provider.dart';
 import '../widgets/responsive_layout.dart';
@@ -16,13 +17,6 @@ class CheckoutTab extends StatefulWidget {
   State<CheckoutTab> createState() => _CheckoutTabState();
 }
 
-class _CartItem {
-  final InventoryItem item;
-  double customPrice;
-
-  _CartItem({required this.item, required this.customPrice});
-}
-
 class _CheckoutTabState extends State<CheckoutTab> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -33,7 +27,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
   final List<File> _clientPicFiles = [];
   final List<File> _beforePhotos = [];
   
-  final List<_CartItem> _cart = [];
+  int _currentStep = 0; // 0 = Cart/Catalog, 1 = Rental Details Form
   final ImagePicker _imagePicker = ImagePicker();
   String _catalogSearchQuery = '';
   List<int> _unavailableItemIds = [];
@@ -70,13 +64,14 @@ class _CheckoutTabState extends State<CheckoutTab> {
       }
 
       // If any item already in the cart is now unavailable, show warning
-      final conflictNames = _cart
+      final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
+      final conflictNames = rentalProvider.cart
           .where((cartItem) => ids.contains(cartItem.item.id))
           .map((cartItem) => cartItem.item.name)
           .toList();
 
       if (conflictNames.isNotEmpty && mounted) {
-        final lockPeriod = Provider.of<RentalProvider>(context, listen: false).dateLockingPeriod;
+        final lockPeriod = rentalProvider.dateLockingPeriod;
         final blockDays = lockPeriod * 2;
         showDialog(
           context: context,
@@ -115,8 +110,9 @@ class _CheckoutTabState extends State<CheckoutTab> {
   }
 
   void _addItemToCart(InventoryItem item) {
+    final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
     if (_selectedDate != null && _unavailableItemIds.contains(item.id)) {
-      final lockPeriod = Provider.of<RentalProvider>(context, listen: false).dateLockingPeriod;
+      final lockPeriod = rentalProvider.dateLockingPeriod;
       final blockDays = lockPeriod * 2;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -126,7 +122,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
       );
       return;
     }
-    if (_cart.any((element) => element.item.id == item.id)) {
+    if (rentalProvider.cart.any((element) => element.item.id == item.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Item sudah ada di keranjang!'),
@@ -135,21 +131,15 @@ class _CheckoutTabState extends State<CheckoutTab> {
       );
       return;
     }
-    setState(() {
-      _cart.add(_CartItem(
-        item: item,
-        customPrice: item.rentalRate ?? 0.0,
-      ));
-    });
+    rentalProvider.addToCart(item);
     if (_modalSetState != null) {
       _modalSetState!(() {});
     }
   }
 
   void _removeItemFromCart(int index) {
-    setState(() {
-      _cart.removeAt(index);
-    });
+    final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
+    rentalProvider.removeFromCart(index);
     if (_modalSetState != null) {
       _modalSetState!(() {});
     }
@@ -280,7 +270,8 @@ class _CheckoutTabState extends State<CheckoutTab> {
   }
 
   double get _totalAmount {
-    return _cart.fold(0.0, (sum, element) => sum + element.customPrice);
+    final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
+    return rentalProvider.totalCartAmount;
   }
 
   void _submitCheckout() async {
@@ -295,8 +286,10 @@ class _CheckoutTabState extends State<CheckoutTab> {
       return;
     }
     
+    final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
+
     // Check conflicts again
-    final unavailableInCart = _cart.where((cartItem) => _unavailableItemIds.contains(cartItem.item.id)).toList();
+    final unavailableInCart = rentalProvider.cart.where((cartItem) => _unavailableItemIds.contains(cartItem.item.id)).toList();
     if (unavailableInCart.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -307,7 +300,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
       return;
     }
 
-    if (_cart.isEmpty) {
+    if (rentalProvider.cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Keranjang belanja Anda kosong! Tambahkan setidaknya satu komponen gown.'),
@@ -317,15 +310,13 @@ class _CheckoutTabState extends State<CheckoutTab> {
       return;
     }
 
-    final rentalProvider = Provider.of<RentalProvider>(context, listen: false);
-
     final success = await rentalProvider.checkout(
       customerName: _nameController.text.trim(),
       customerPhone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
       eventDate: _selectedDate!,
       status: 'booked',
       groupOrderName: _groupController.text.trim().isEmpty ? null : _groupController.text.trim(),
-      items: _cart.map((cartItem) => {
+      items: rentalProvider.cart.map((cartItem) => {
         'inventory_item_id': cartItem.item.id,
         'rental_price': cartItem.customPrice,
       }).toList(),
@@ -341,7 +332,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
         ),
       );
       setState(() {
-        _cart.clear();
+        rentalProvider.clearCart();
         _nameController.clear();
         _phoneController.clear();
         _groupController.clear();
@@ -349,6 +340,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
         _clientPicFiles.clear();
         _beforePhotos.clear();
         _unavailableItemIds.clear();
+        _currentStep = 0;
       });
       if (_modalSetState != null) {
         _modalSetState!(() {});
@@ -370,6 +362,8 @@ class _CheckoutTabState extends State<CheckoutTab> {
 
     // Left Form Panel Widget
     Widget buildFormPanel() {
+      final rentalProvider = Provider.of<RentalProvider>(context);
+
       return Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -389,7 +383,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '1. Detail Pelanggan & Acara',
+                        'Detail Pelanggan & Acara',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -481,7 +475,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '2. Foto Fitting Gown Klien',
+                        'Foto Fitting Gown Klien',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -568,7 +562,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '3. Foto Kondisi Gown (Audit Trail)',
+                        'Foto Kondisi Gown (Audit Trail)',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -648,28 +642,61 @@ class _CheckoutTabState extends State<CheckoutTab> {
                 ),
               ),
               const SizedBox(height: 24),
-              Consumer<RentalProvider>(
-                builder: (context, rentalProv, _) {
-                  return ElevatedButton(
-                    onPressed: rentalProv.isLoading ? null : _submitCheckout,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentStep = 0;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(color: primaryColor),
+                        foregroundColor: primaryColor,
                       ),
-                      elevation: 2,
+                      child: const Text(
+                        'Kembali',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    child: rentalProv.isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                            'Selesaikan Pemesanan & Checkout (Rp ${NumberFormat('#,###').format(_totalAmount)})',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Consumer<RentalProvider>(
+                      builder: (context, rentalProv, _) {
+                        return ElevatedButton(
+                          onPressed: rentalProv.isLoading ? null : _submitCheckout,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
                           ),
-                  );
-                },
+                          child: rentalProv.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Text(
+                                  'Simpan Transaksi',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 80),
             ],
@@ -680,6 +707,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
 
     // Right Cart/Inventory Picker Panel
     Widget buildCartPanel() {
+      final rentalProvider = Provider.of<RentalProvider>(context);
       final invProvider = Provider.of<InventoryProvider>(context);
       final tokens = _catalogSearchQuery.toLowerCase().split(RegExp(r'\s+')).where((token) => token.isNotEmpty).toList();
       final searchResults = invProvider.items.where((item) {
@@ -695,13 +723,12 @@ class _CheckoutTabState extends State<CheckoutTab> {
         });
       }).toList();
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Cart list
-          Expanded(
-            flex: 5,
-            child: Card(
+      return SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cart list
+            Card(
               margin: const EdgeInsets.all(16),
               elevation: 0.5,
               shape: RoundedRectangleBorder(
@@ -717,7 +744,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Item Padu Padan Terpilih',
+                          'Item Sewa Terpilih',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -731,7 +758,7 @@ class _CheckoutTabState extends State<CheckoutTab> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${_cart.length} Bagian Terpilih',
+                            '${rentalProvider.cart.length} Item Terpilih',
                             style: TextStyle(
                               fontSize: 12,
                               color: primaryColor,
@@ -742,119 +769,117 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       ],
                     ),
                     const Divider(height: 24),
-                    Expanded(
-                      child: _cart.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.shopping_bag_outlined, size: 48, color: Colors.grey[300]),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    'Keranjang kosong',
-                                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Tambahkan atasan atau bawahan dari pencarian katalog di bawah',
-                                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _cart.length,
-                              itemBuilder: (context, index) {
-                                final cartItem = _cart[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: Colors.grey[200]!),
-                                  ),
-                                  color: Colors.grey[50],
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Row(
-                                      children: [
-                                        // Category Icon badge
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: cartItem.item.type == 'top'
-                                                ? Colors.orange[50]
-                                                : Colors.blue[50],
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            cartItem.item.type == 'top'
-                                                ? Icons.checkroom_outlined
-                                                : Icons.accessibility_new_outlined,
-                                            color: cartItem.item.type == 'top'
-                                                ? Colors.orange[800]
-                                                : Colors.blue[800],
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                cartItem.item.name,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Text(
-                                                '${cartItem.item.sku} • Ukuran: ${cartItem.item.size} • ${cartItem.item.color}',
-                                                style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        // Edit Price field
-                                        SizedBox(
-                                          width: 100,
-                                          child: TextFormField(
-                                            initialValue: cartItem.customPrice.toStringAsFixed(0),
-                                            keyboardType: TextInputType.number,
-                                            decoration: InputDecoration(
-                                              prefixText: 'Rp ',
-                                              labelText: 'Harga Sewa',
-                                              labelStyle: const TextStyle(fontSize: 10),
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                            ),
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                            onChanged: (val) {
-                                              final parsed = double.tryParse(val);
-                                              if (parsed != null) {
-                                                setState(() {
-                                                  cartItem.customPrice = parsed;
-                                                });
-                                                if (_modalSetState != null) {
-                                                  _modalSetState!(() {});
-                                                }
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                          onPressed: () => _removeItemFromCart(index),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
+                    rentalProvider.cart.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.shopping_bag_outlined, size: 48, color: Colors.grey[300]),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Keranjang kosong',
+                                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Tambahkan atasan atau bawahan dari pencarian katalog di bawah',
+                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                    ),
+                          )
+                        : ListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: rentalProvider.cart.length,
+                            itemBuilder: (context, index) {
+                              final cartItem = rentalProvider.cart[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey[200]!),
+                                ),
+                                color: Colors.grey[50],
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Row(
+                                    children: [
+                                      // Category Icon badge
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: cartItem.item.type == 'top'
+                                              ? Colors.orange[50]
+                                              : Colors.blue[50],
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          cartItem.item.type == 'top'
+                                              ? Icons.checkroom_outlined
+                                              : Icons.accessibility_new_outlined,
+                                          color: cartItem.item.type == 'top'
+                                              ? Colors.orange[800]
+                                              : Colors.blue[800],
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              cartItem.item.name,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              '${cartItem.item.sku} • Ukuran: ${cartItem.item.size} • ${cartItem.item.color}',
+                                              style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      // Edit Price field
+                                      SizedBox(
+                                        width: 100,
+                                        child: TextFormField(
+                                          initialValue: cartItem.customPrice.toStringAsFixed(0),
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                            prefixText: 'Rp ',
+                                            labelText: 'Harga Sewa',
+                                            labelStyle: const TextStyle(fontSize: 10),
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                          onChanged: (val) {
+                                            final parsed = double.tryParse(val);
+                                            if (parsed != null) {
+                                              rentalProvider.updateCartItemPrice(index, parsed);
+                                              if (_modalSetState != null) {
+                                                _modalSetState!(() {});
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                        onPressed: () => _removeItemFromCart(index),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                     const Divider(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -873,17 +898,39 @@ class _CheckoutTabState extends State<CheckoutTab> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: rentalProvider.cart.isEmpty
+                            ? null
+                            : () {
+                                setState(() {
+                                  _currentStep = 1;
+                                });
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Lanjut ke Detail Rental',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-          ),
-          
+
           // Inventory Catalog search
-          Expanded(
-            flex: 4,
-            child: Card(
-              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+          Card(
+            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
               elevation: 0.5,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -909,124 +956,137 @@ class _CheckoutTabState extends State<CheckoutTab> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Expanded(
-                      child: invProvider.isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : searchResults.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'Tidak ada gown yang cocok ditemukan di inventaris.',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  itemCount: searchResults.length,
-                                  itemBuilder: (context, index) {
-                                    final item = searchResults[index];
-                                    final isUnavailable = _selectedDate != null && _unavailableItemIds.contains(item.id);
-                                    return ListTile(
-                                      dense: true,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                                      leading: CircleAvatar(
-                                        backgroundColor: isUnavailable
-                                            ? Colors.grey[200]
-                                            : (item.type == 'top' ? Colors.orange[50] : Colors.blue[50]),
-                                        radius: 16,
-                                        child: Text(
-                                          item.type == 'top' ? 'T' : 'B',
-                                          style: TextStyle(
-                                            color: isUnavailable
-                                                ? Colors.grey
-                                                : (item.type == 'top' ? Colors.orange[800] : Colors.blue[800]),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Text(
-                                        item.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: isUnavailable ? Colors.grey : Colors.black87,
-                                        ),
-                                      ),
-                                      subtitle: isUnavailable
-                                          ? Text(
-                                              'Dipesan / Diblokir (Blokir ${Provider.of<RentalProvider>(context, listen: false).dateLockingPeriod * 2} hari)',
-                                              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 10),
-                                            )
-                                          : Text('${item.sku} • Uk: ${item.size} • Rp ${NumberFormat('#,###').format(item.rentalRate ?? 0)}'),
-                                      trailing: IconButton(
-                                        icon: Icon(
-                                          isUnavailable ? Icons.block : Icons.add_circle,
-                                          color: isUnavailable ? Colors.grey : primaryColor,
-                                        ),
-                                        onPressed: isUnavailable ? null : () => _addItemToCart(item),
-                                      ),
-                                    );
-                                  },
+                    invProvider.isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : searchResults.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Tidak ada gown yang cocok ditemukan di inventaris.',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                                 ),
-                    ),
+                              )
+                            : ListView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final item = searchResults[index];
+                                  final isUnavailable = _selectedDate != null && _unavailableItemIds.contains(item.id);
+                                  return ListTile(
+                                    dense: true,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                    leading: CircleAvatar(
+                                      backgroundColor: isUnavailable
+                                          ? Colors.grey[200]
+                                          : (item.type == 'top' ? Colors.orange[50] : Colors.blue[50]),
+                                      radius: 16,
+                                      child: Text(
+                                        item.type == 'top' ? 'T' : 'B',
+                                        style: TextStyle(
+                                          color: isUnavailable
+                                              ? Colors.grey
+                                              : (item.type == 'top' ? Colors.orange[800] : Colors.blue[800]),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isUnavailable ? Colors.grey : Colors.black87,
+                                      ),
+                                    ),
+                                    subtitle: isUnavailable
+                                        ? Text(
+                                            'Dipesan / Diblokir (Blokir ${rentalProvider.dateLockingPeriod * 2} hari)',
+                                            style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 10),
+                                          )
+                                        : Text('${item.sku} • Uk: ${item.size} • Rp ${NumberFormat('#,###').format(item.rentalRate ?? 0)}'),
+                                    trailing: IconButton(
+                                      icon: Icon(
+                                        isUnavailable ? Icons.block : Icons.add_circle,
+                                        color: isUnavailable ? Colors.grey : primaryColor,
+                                      ),
+                                      onPressed: isUnavailable ? null : () => _addItemToCart(item),
+                                    ),
+                                  );
+                                },
+                              ),
                   ],
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    if (isMobile) {
-      // Mobile layout: Single page with forms, custom bottom drawer for Cart picker
-      return Scaffold(
-        body: buildFormPanel(),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    Widget buildStepIndicator() {
+      final activeColor = primaryColor;
+      final inactiveColor = Colors.grey[350]!;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Step 1
+            Icon(Icons.shopping_cart, color: _currentStep == 0 ? activeColor : Colors.green, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '1. Keranjang',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: _currentStep == 0 ? activeColor : Colors.green,
               ),
-              builder: (context) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setModalState) {
-                    _modalSetState = setModalState;
-                    return FractionallySizedBox(
-                      heightFactor: 0.8,
-                      child: buildCartPanel(),
-                    );
-                  },
-                );
-              },
-            ).then((_) {
-              _modalSetState = null;
-            });
-          },
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.shopping_cart),
-          label: Text('Keranjang (${_cart.length}) - Rp ${NumberFormat('#,###').format(_totalAmount)}'),
+            ),
+            const SizedBox(width: 16),
+            // Connector Line
+            Container(
+              width: 40,
+              height: 2,
+              color: _currentStep == 1 ? Colors.green : inactiveColor,
+            ),
+            const SizedBox(width: 16),
+            // Step 2
+            Icon(Icons.assignment, color: _currentStep == 1 ? activeColor : inactiveColor, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '2. Detail Rental',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: _currentStep == 1 ? activeColor : inactiveColor,
+              ),
+            ),
+          ],
         ),
       );
-    } else {
-      // Tablet/Desktop: Split layout side-by-side
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 5,
-            child: buildFormPanel(),
-          ),
-          const VerticalDivider(width: 1, thickness: 1),
-          Expanded(
-            flex: 5,
-            child: buildCartPanel(),
-          ),
-        ],
-      );
     }
+
+    Widget bodyWidget = _currentStep == 0 ? buildCartPanel() : buildFormPanel();
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: buildStepIndicator(),
+      ),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? double.infinity : 900,
+          ),
+          child: bodyWidget,
+        ),
+      ),
+    );
   }
 }

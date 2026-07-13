@@ -409,6 +409,27 @@ class _RentalsTabState extends State<RentalsTab> {
       return matchesSearch && matchesStatus;
     }).toList();
 
+    // Sort: Upcoming event first (closest to today), then past events (most recent first)
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    filteredRentals.sort((a, b) {
+      final aDate = DateTime(a.eventDate.year, a.eventDate.month, a.eventDate.day);
+      final bDate = DateTime(b.eventDate.year, b.eventDate.month, b.eventDate.day);
+
+      final aIsUpcoming = !aDate.isBefore(today);
+      final bIsUpcoming = !bDate.isBefore(today);
+
+      if (aIsUpcoming && !bIsUpcoming) {
+        return -1; // a comes first
+      } else if (!aIsUpcoming && bIsUpcoming) {
+        return 1; // b comes first
+      } else if (aIsUpcoming && bIsUpcoming) {
+        return aDate.compareTo(bDate); // Closest upcoming first
+      } else {
+        return bDate.compareTo(aDate); // Most recent past first
+      }
+    });
+
     return Scaffold(
       body: Column(
         children: [
